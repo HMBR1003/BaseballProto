@@ -1,0 +1,182 @@
+{
+  "project_info": {
+    "project_number": "886923317230",
+    "firebase_url": "https://fir-test-8ffe3.firebaseio.com",
+    "project_id": "fir-test-8ffe3",
+    "storage_bucket": "fir-test-8ffe3.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:886923317230:android:f1e6a8ede42789b2",
+        "android_client_info": {
+          "package_name": "org.baseballbaedal.firebaselogintest"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "886923317230-4ma085qb6i0oi9bl6ma9l2ic2bab4lbr.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.baseballbaedal.firebaselogintest",
+            "certificate_hash": "9a6042ebb89e584d11d538459a4f604d35f4a789"
+          }
+        },
+        {
+          "client_id": "886923317230-ksfdurhset6ak2hm20t8hjcad96oe0k3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC9h6HHpMBhc80e8M-9IWI44y_qbIjw35w"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "886923317230-ksfdurhset6ak2hm20t8hjcad96oe0k3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:886923317230:android:11b4eb5c862a05e8",
+        "android_client_info": {
+          "package_name": "org.baseballbaedal.logintest"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "886923317230-jpigpovk5ae74scufs946uvli9vpe8th.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.baseballbaedal.logintest",
+            "certificate_hash": "9a6042ebb89e584d11d538459a4f604d35f4a789"
+          }
+        },
+        {
+          "client_id": "886923317230-ksfdurhset6ak2hm20t8hjcad96oe0k3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC9h6HHpMBhc80e8M-9IWI44y_qbIjw35w"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "886923317230-ksfdurhset6ak2hm20t8hjcad96oe0k3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:886923317230:android:7984a7644e68c929",
+        "android_client_info": {
+          "package_name": "org.baseballbaedal.logintest2"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "886923317230-ksfdurhset6ak2hm20t8hjcad96oe0k3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC9h6HHpMBhc80e8M-9IWI44y_qbIjw35w"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:886923317230:android:066f0582f1fbd127",
+        "android_client_info": {
+          "package_name": "org.androidtown.baseballproto"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "886923317230-lip2i0td906cione68gn76h3uehco74j.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.androidtown.baseballproto",
+            "certificate_hash": "6cdd9d3788d3913b8ca52121c272b92d6d89cc1b"
+          }
+        },
+        {
+          "client_id": "886923317230-pqqno7k5851rdg02lg3etolqb73msgi3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.androidtown.baseballproto",
+            "certificate_hash": "9a6042ebb89e584d11d538459a4f604d35f4a789"
+          }
+        },
+        {
+          "client_id": "886923317230-ksfdurhset6ak2hm20t8hjcad96oe0k3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC9h6HHpMBhc80e8M-9IWI44y_qbIjw35w"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "886923317230-ksfdurhset6ak2hm20t8hjcad96oe0k3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
