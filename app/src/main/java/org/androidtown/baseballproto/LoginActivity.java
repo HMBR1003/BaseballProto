@@ -235,6 +235,7 @@ public class LoginActivity extends AppCompatActivity implements
         Toast.makeText(this, "연결 실패", Toast.LENGTH_SHORT).show();
     }
 
+    //뒤로가기 버튼 기능 설정
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {

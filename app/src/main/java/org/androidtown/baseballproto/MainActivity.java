@@ -50,6 +50,7 @@ import devlight.io.library.ntb.NavigationTabBar;
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
     public static final int LOGIN_REQUEST = 100;
+    public static final int BUSINESS_SIGNUP_REQUEST = 200;
     HomeFragment homeFragment;
     DeliveryFragment deliveryFragment;
     TakeoutFragment takeoutFragment;
@@ -187,15 +188,89 @@ public class MainActivity extends AppCompatActivity
                 dialog.show();
             }
         } else if (id == R.id.nav_cart) {  //왼쪽 슬라이드메뉴 장바구니 부분
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            if(user==null) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setTitle("알림");
+                builder.setMessage("먼저 로그인을 해주세요");
+                builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                        startActivityForResult(intent, LOGIN_REQUEST);
+                    }
+                });
+                AlertDialog dialog = builder.create();
+                dialog.show();
+            }
+            else {
 
+            }
         } else if (id == R.id.nav_orderList) {  //왼쪽 슬라이드메뉴 주문내역 부분
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            if(user==null) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setTitle("알림");
+                builder.setMessage("먼저 로그인을 해주세요");
+                builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                        startActivityForResult(intent, LOGIN_REQUEST);
+                    }
+                });
+                AlertDialog dialog = builder.create();
+                dialog.show();
+            }
+            else {
 
+            }
         } else if (id == R.id.nav_reviewManage) {  //왼쪽 슬라이드메뉴 리뷰관리 부분
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            if(user==null) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setTitle("알림");
+                builder.setMessage("먼저 로그인을 해주세요");
+                builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                        startActivityForResult(intent, LOGIN_REQUEST);
+                    }
+                });
+                AlertDialog dialog = builder.create();
+                dialog.show();
+            }
+            else {
 
+            }
         } else if (id == R.id.nav_changeCol) {  //왼쪽 슬라이드메뉴 경기장 변경 부분
 
         } else if (id == R.id.nav_newBusiness) {  //왼쪽 슬라이드메뉴 사업자 신규 등록 부분
-
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            if(user==null) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setTitle("알림");
+                builder.setMessage("먼저 로그인을 해주세요");
+                builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                        startActivityForResult(intent, LOGIN_REQUEST);
+                    }
+                });
+                AlertDialog dialog = builder.create();
+                dialog.show();
+            }
+            else {
+                Intent intent = new Intent(this, BusinessSignupActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivityForResult(intent, BUSINESS_SIGNUP_REQUEST);
+            }
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
