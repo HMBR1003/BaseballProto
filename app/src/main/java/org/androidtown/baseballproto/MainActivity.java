@@ -37,6 +37,11 @@ import com.facebook.FacebookSdk;
 import com.facebook.login.LoginManager;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import org.androidtown.baseballproto.databinding.ActivityMainBinding;
 
@@ -56,13 +61,13 @@ public class MainActivity extends AppCompatActivity
     TakeoutFragment takeoutFragment;
     BaseInfoFragment baseInfoFragment;
     ViewPager viewPager;
+    int isBusiness;
 
 
     ActivityMainBinding mainBinding;
     TextView userEmail;
     TextView userName;
     MenuItem navLogin;
-//    MenuItem navLogout;
     FirebaseAuth mAuth;
     FirebaseAuth.AuthStateListener mAuthListener;
 
@@ -109,8 +114,37 @@ public class MainActivity extends AppCompatActivity
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
                 FirebaseUser user = firebaseAuth.getCurrentUser();
                 if (user != null) {
+                    //데이터베이스 유저 영역 참조변수 선언 및 초기화
+                    DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("users");
+
+                    //데이터베이스에서 유저가 고객인지 사업자 등록중인지 사업자인지 담는 정보를 불러옴
+                    userRef.child(user.getUid()).child("isBusiness(0(not),1(applying),2(finish))").addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            isBusiness = dataSnapshot.getValue(Integer.class);
+                            Toast.makeText(MainActivity.this, "사업자여부 데이터 가져오기 성공", Toast.LENGTH_SHORT).show();
+                        }
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+                            Toast.makeText(MainActivity.this, "사업자여부 데이터 가져오기 실패", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+
+                    if(isBusiness==0){  //고객
+                        userName.setText(user.getDisplayName()+"고객님");
+                    }
+                    else if(isBusiness==1){ //사업자 등록 신청한 사람
+                        userName.setText(user.getDisplayName()+"고객님\n사업자 등록 신청중입니다.");
+                    }
+                    else if(isBusiness==2){ //사업자
+                        userName.setText(user.getDisplayName()+"점주님\n");
+
+                    }
+                    else
+                        Toast.makeText(MainActivity.this, "사업자여부 데이터가 0,1,2중 하나가 아닙니다.", Toast.LENGTH_SHORT).show();
+
+                    //내비게이션 메뉴 설정
                     navLogin.setTitle("로그아웃");
-                    userName.setText(user.getDisplayName());
                     userEmail.setText(user.getEmail());
                 } else {
                     navLogin.setTitle("로그인");
@@ -185,6 +219,7 @@ public class MainActivity extends AppCompatActivity
                     }
                 });
                 AlertDialog dialog = builder.create();
+                dialog.setCancelable(false);
                 dialog.show();
             }
         } else if (id == R.id.nav_cart) {  //왼쪽 슬라이드메뉴 장바구니 부분
@@ -202,6 +237,7 @@ public class MainActivity extends AppCompatActivity
                     }
                 });
                 AlertDialog dialog = builder.create();
+                dialog.setCancelable(false);
                 dialog.show();
             }
             else {
@@ -222,6 +258,7 @@ public class MainActivity extends AppCompatActivity
                     }
                 });
                 AlertDialog dialog = builder.create();
+                dialog.setCancelable(false);
                 dialog.show();
             }
             else {
@@ -242,6 +279,7 @@ public class MainActivity extends AppCompatActivity
                     }
                 });
                 AlertDialog dialog = builder.create();
+                dialog.setCancelable(false);
                 dialog.show();
             }
             else {
@@ -264,10 +302,13 @@ public class MainActivity extends AppCompatActivity
                     }
                 });
                 AlertDialog dialog = builder.create();
+                dialog.setCancelable(false);
                 dialog.show();
             }
             else {
+
                 Intent intent = new Intent(this, BusinessSignupActivity.class);
+                intent.putExtra("uid",user.getUid());
                 intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivityForResult(intent, BUSINESS_SIGNUP_REQUEST);
             }

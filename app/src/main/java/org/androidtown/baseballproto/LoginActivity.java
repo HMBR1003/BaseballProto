@@ -54,12 +54,11 @@ public class LoginActivity extends AppCompatActivity implements
     private CallbackManager mCallbackManager;   //페이스북 로그인 관련
 
     private FirebaseAuth mAuth;         //파이어베이스 계정 관련
-    private FirebaseDatabase database;  //파이어베이스 DB 관련
+//    private FirebaseDatabase database;  //파이어베이스 DB 관련
     private DatabaseReference myRef;    //파이어베이스 DB 관련
     ActivityLoginBinding activityLoginBinding;  //데이터 바인딩
 
     ProgressDialog dialog;
-    Toolbar mToolbar; //뒤로가기 버튼 만들기
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -75,8 +74,8 @@ public class LoginActivity extends AppCompatActivity implements
 
         mAuth = FirebaseAuth.getInstance();     //파이어베이스 계정 인스턴스 가져오기
         // DB 관련 변수 초기화
-        database = FirebaseDatabase.getInstance();
-        myRef = database.getReference("users");
+//        database = FirebaseDatabase.getInstance();
+        myRef = FirebaseDatabase.getInstance().getReference("users");
 
         //구글 로그인 작업
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -107,6 +106,7 @@ public class LoginActivity extends AppCompatActivity implements
                 dialog=new ProgressDialog(LoginActivity.this);
                 dialog.setProgress(ProgressDialog.STYLE_SPINNER);
                 dialog.setMessage("로그인 중입니다...");
+                dialog.setCancelable(false);
                 dialog.show();
                 handleFacebookAccessToken(loginResult.getAccessToken());
             }
@@ -151,10 +151,11 @@ public class LoginActivity extends AppCompatActivity implements
                             }
                             else {
                                 //이메일을 제공했을 시 데이터베이스에 유저 정보 등록 후
-                                database = FirebaseDatabase.getInstance();
+//                                database = FirebaseDatabase.getInstance();
                                 myRef =  FirebaseDatabase.getInstance().getReference();
                                 myRef.child("users").child(user.getUid()).child("name").setValue(user.getDisplayName());
                                 myRef.child("users").child(user.getUid()).child("email").setValue(user.getEmail());
+                                myRef.child("users").child(user.getUid()).child("isBusiness(0(not),1(applying),2(finish))").setValue(0);
 
                                 //홈화면으로 돌아가는 작업을 한다.
                                 Intent intent = new Intent();
@@ -188,6 +189,7 @@ public class LoginActivity extends AppCompatActivity implements
                 dialog=new ProgressDialog(this);
                 dialog.setProgress(ProgressDialog.STYLE_SPINNER);
                 dialog.setMessage("로그인 중입니다...");
+                dialog.setCancelable(false);
                 dialog.show();
                 firebaseAuthWithGoogle(acct);
             } else {
@@ -213,10 +215,11 @@ public class LoginActivity extends AppCompatActivity implements
 
                             //데이터베이스에 유저정보 등록
                             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-                            database = FirebaseDatabase.getInstance();
+//                            database = FirebaseDatabase.getInstance();
                             myRef =  FirebaseDatabase.getInstance().getReference();
                             myRef.child("users").child(user.getUid()).child("name").setValue(user.getDisplayName());
                             myRef.child("users").child(user.getUid()).child("email").setValue(user.getEmail());
+                            myRef.child("users").child(user.getUid()).child("isBusiness(0(not),1(applying),2(finish))").setValue(0);
 
                             //창 닫기
                             finish();
