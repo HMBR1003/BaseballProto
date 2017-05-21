@@ -68,8 +68,15 @@ public class MainActivity extends AppCompatActivity
     TextView userEmail;
     TextView userName;
     MenuItem navLogin;
+    MenuItem navCart;
+    MenuItem navOrderList;
+    MenuItem navReviewManage;
+    MenuItem navChangeCol;
+    MenuItem navNewBusiness;
+
     FirebaseAuth mAuth;
     FirebaseAuth.AuthStateListener mAuthListener;
+    FirebaseUser user;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,7 +108,12 @@ public class MainActivity extends AppCompatActivity
         //왼쪽 슬라이드 메뉴 로그인과 로그아웃버튼 아이디 할당
         Menu menu = navigationView.getMenu();
         navLogin=menu.findItem(R.id.nav_login);
-//        navLogout=menu.findItem(R.id.nav_logout);
+        navNewBusiness=menu.findItem(R.id.nav_newBusiness);
+        navReviewManage=menu.findItem(R.id.nav_reviewManage);
+        navCart=menu.findItem(R.id.nav_cart);
+        navOrderList=menu.findItem(R.id.nav_orderList);
+        navChangeCol=menu.findItem(R.id.nav_changeCol);
+
 
         //왼쪽 슬라이드 메뉴 유저이메일과 유저 이름 아이디 할당
         View headerView = navigationView.getHeaderView(0);
@@ -112,44 +124,20 @@ public class MainActivity extends AppCompatActivity
         mAuthListener = new FirebaseAuth.AuthStateListener() {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
-                FirebaseUser user = firebaseAuth.getCurrentUser();
+                user = firebaseAuth.getCurrentUser();
                 if (user != null) {
-                    //데이터베이스 유저 영역 참조변수 선언 및 초기화
-                    DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("users");
-
-                    //데이터베이스에서 유저가 고객인지 사업자 등록중인지 사업자인지 담는 정보를 불러옴
-                    userRef.child(user.getUid()).child("isBusiness(0(not),1(applying),2(finish))").addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(DataSnapshot dataSnapshot) {
-                            isBusiness = dataSnapshot.getValue(Integer.class);
-                            Toast.makeText(MainActivity.this, "사업자여부 데이터 가져오기 성공", Toast.LENGTH_SHORT).show();
-                        }
-                        @Override
-                        public void onCancelled(DatabaseError databaseError) {
-                            Toast.makeText(MainActivity.this, "사업자여부 데이터 가져오기 실패", Toast.LENGTH_SHORT).show();
-                        }
-                    });
-
-                    if(isBusiness==0){  //고객
-                        userName.setText(user.getDisplayName()+"고객님");
-                    }
-                    else if(isBusiness==1){ //사업자 등록 신청한 사람
-                        userName.setText(user.getDisplayName()+"고객님\n사업자 등록 신청중입니다.");
-                    }
-                    else if(isBusiness==2){ //사업자
-                        userName.setText(user.getDisplayName()+"점주님\n");
-
-                    }
-                    else
-                        Toast.makeText(MainActivity.this, "사업자여부 데이터가 0,1,2중 하나가 아닙니다.", Toast.LENGTH_SHORT).show();
-
                     //내비게이션 메뉴 설정
                     navLogin.setTitle("로그아웃");
                     userEmail.setText(user.getEmail());
                 } else {
-                    navLogin.setTitle("로그인");
                     userName.setText("로그인이 필요합니다");
                     userEmail.setText("");
+                    navLogin.setTitle("로그인");
+                    navCart.setVisible(true);
+                    navOrderList.setTitle("주문 내역");
+                    navReviewManage.setTitle("리뷰 관리");
+                    navChangeCol.setVisible(true);
+                    navNewBusiness.setTitle("사업자 신규등록 신청");
                 }
             }
         };
@@ -225,20 +213,7 @@ public class MainActivity extends AppCompatActivity
         } else if (id == R.id.nav_cart) {  //왼쪽 슬라이드메뉴 장바구니 부분
             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
             if(user==null) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                builder.setTitle("알림");
-                builder.setMessage("먼저 로그인을 해주세요");
-                builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        Intent intent = new Intent(MainActivity.this, LoginActivity.class);
-                        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                        startActivityForResult(intent, LOGIN_REQUEST);
-                    }
-                });
-                AlertDialog dialog = builder.create();
-                dialog.setCancelable(false);
-                dialog.show();
+                pleaseLogin();
             }
             else {
 
@@ -246,41 +221,14 @@ public class MainActivity extends AppCompatActivity
         } else if (id == R.id.nav_orderList) {  //왼쪽 슬라이드메뉴 주문내역 부분
             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
             if(user==null) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                builder.setTitle("알림");
-                builder.setMessage("먼저 로그인을 해주세요");
-                builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        Intent intent = new Intent(MainActivity.this, LoginActivity.class);
-                        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                        startActivityForResult(intent, LOGIN_REQUEST);
-                    }
-                });
-                AlertDialog dialog = builder.create();
-                dialog.setCancelable(false);
-                dialog.show();
+                pleaseLogin();
             }
             else {
 
             }
         } else if (id == R.id.nav_reviewManage) {  //왼쪽 슬라이드메뉴 리뷰관리 부분
-            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
             if(user==null) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                builder.setTitle("알림");
-                builder.setMessage("먼저 로그인을 해주세요");
-                builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        Intent intent = new Intent(MainActivity.this, LoginActivity.class);
-                        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                        startActivityForResult(intent, LOGIN_REQUEST);
-                    }
-                });
-                AlertDialog dialog = builder.create();
-                dialog.setCancelable(false);
-                dialog.show();
+                pleaseLogin();
             }
             else {
 
@@ -290,25 +238,12 @@ public class MainActivity extends AppCompatActivity
         } else if (id == R.id.nav_newBusiness) {  //왼쪽 슬라이드메뉴 사업자 신규 등록 부분
             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
             if(user==null) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                builder.setTitle("알림");
-                builder.setMessage("먼저 로그인을 해주세요");
-                builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        Intent intent = new Intent(MainActivity.this, LoginActivity.class);
-                        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                        startActivityForResult(intent, LOGIN_REQUEST);
-                    }
-                });
-                AlertDialog dialog = builder.create();
-                dialog.setCancelable(false);
-                dialog.show();
+                pleaseLogin();
             }
             else {
-
                 Intent intent = new Intent(this, BusinessSignupActivity.class);
                 intent.putExtra("uid",user.getUid());
+                intent.putExtra("isBusiness",isBusiness);
                 intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivityForResult(intent, BUSINESS_SIGNUP_REQUEST);
             }
@@ -319,6 +254,29 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
+    //로그인 해달라는 창을 띄우는 메서드
+    public void pleaseLogin() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        builder.setTitle("알림");
+        builder.setMessage("먼저 로그인을 해주세요");
+        builder.setPositiveButton("로그인", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivityForResult(intent, LOGIN_REQUEST);
+            }
+        });
+        builder.setNegativeButton("취소", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+            }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.setCancelable(false);
+        dialog.show();
+    }
     //프래그먼트 어댑터
     private class FragmentAdapter extends FragmentStatePagerAdapter {
 
@@ -362,9 +320,48 @@ public class MainActivity extends AppCompatActivity
             mAuth.removeAuthStateListener(mAuthListener);
         }
     }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        //로그인 액티비티에서 로그인 성공 응답을 보내왔을 경우
+        if(requestCode==LOGIN_REQUEST && resultCode==RESULT_OK){
+            //유저 객체 고기화
+            mAuth = FirebaseAuth.getInstance();
+            user = mAuth.getCurrentUser();
+            //데이터베이스 유저 영역 참조변수 선언 및 초기화
+            DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("users");
+
+            //데이터베이스에서 유저가 고객인지 사업자 등록중인지 사업자인지 담는 정보를 불러옴
+            userRef.child(user.getUid()).child("isBusiness(0(not),1(applying),2(finish))").addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    isBusiness = dataSnapshot.getValue(Integer.class);
+                    if(isBusiness==0){  //고객
+                        userName.setText(user.getDisplayName()+"고객님");
+                    }
+                    else if(isBusiness==1){ //사업자 등록 신청한 사람
+                        userName.setText(user.getDisplayName()+"고객님\n사업자 등록 신청중입니다.");
+                        navNewBusiness.setTitle("사업자 신청정보 수정");
+                    }
+                    else if(isBusiness==2){ //사업자
+                        userName.setText(user.getDisplayName()+"점주님\n");
+                        navCart.setVisible(false);
+                        navOrderList.setTitle("주문 받은 내역");
+                        navReviewManage.setTitle("메뉴 관리");
+                        navChangeCol.setVisible(false);
+                        navNewBusiness.setTitle("매장 정보 수정");
+                    }
+                    else
+                        Toast.makeText(MainActivity.this, "사업자여부 데이터가 0,1,2중 하나가 아닙니다.", Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(MainActivity.this, "메인 사업자여부 데이터 가져오기 성공", Toast.LENGTH_SHORT).show();
+                }
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+//                            Toast.makeText(MainActivity.this, "메인 사업자여부 데이터 가져오기 실패", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
     }
 
 

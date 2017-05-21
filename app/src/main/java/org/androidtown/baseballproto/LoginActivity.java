@@ -36,8 +36,11 @@ import com.google.firebase.auth.FacebookAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import org.androidtown.baseballproto.databinding.ActivityLoginBinding;
 
@@ -57,6 +60,7 @@ public class LoginActivity extends AppCompatActivity implements
 //    private FirebaseDatabase database;  //파이어베이스 DB 관련
     private DatabaseReference myRef;    //파이어베이스 DB 관련
     ActivityLoginBinding activityLoginBinding;  //데이터 바인딩
+    String uid;
 
     ProgressDialog dialog;
 
@@ -134,7 +138,9 @@ public class LoginActivity extends AppCompatActivity implements
                         if (task.isSuccessful()) {  //등록 성공했을 시
                             // Sign in success, update UI with the signed-in user's information
                             Log.d("파이어베이스 페이스북 계정","등록 성공");
+
                             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();    //유저 정보를 가져와서
+
                             if(user.getEmail()==null) {                                         //이메일을 허용했는 지 검사한 후
                                 Toast.makeText(getApplicationContext(), "이메일을 허용하시고 다시 로그인해주세요.", Toast.LENGTH_SHORT).show();
                                 user.delete()                                                   //안했으면 등록했던 계정을 삭제한다.
@@ -150,12 +156,27 @@ public class LoginActivity extends AppCompatActivity implements
                                 LoginManager.getInstance().logOut();                            //페이스북 로그아웃 한다 유저는 로그인을 다시해야한다.
                             }
                             else {
-                                //이메일을 제공했을 시 데이터베이스에 유저 정보 등록 후
-//                                database = FirebaseDatabase.getInstance();
+                                //이메일을 제공했을 시 데이터베이스에 유저 정보 등록
                                 myRef =  FirebaseDatabase.getInstance().getReference();
+                                uid=user.getUid();
                                 myRef.child("users").child(user.getUid()).child("name").setValue(user.getDisplayName());
                                 myRef.child("users").child(user.getUid()).child("email").setValue(user.getEmail());
-                                myRef.child("users").child(user.getUid()).child("isBusiness(0(not),1(applying),2(finish))").setValue(0);
+
+                                //데이터베이스에서 사업자확인 항목이 있는지 확인하기 위하여 불러옴
+                                myRef.child("users").child(uid).child("isBusiness(0(not),1(applying),2(finish))").addListenerForSingleValueEvent(new ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(DataSnapshot dataSnapshot) {
+                                        Toast.makeText(LoginActivity.this, "로그인 사업자 여부 데이터 가져오기 성공", Toast.LENGTH_SHORT).show();
+                                        // 사업자항목이 없으면 새로 생성
+                                        if(dataSnapshot.getValue()==null) {
+                                            myRef.child("users").child(uid).child("isBusiness(0(not),1(applying),2(finish))").setValue(0);
+                                        }
+                                    }
+                                    @Override
+                                    public void onCancelled(DatabaseError databaseError) {
+                                        Toast.makeText(LoginActivity.this, "로그인 사업자 여부 데이터 가져오기 실패", Toast.LENGTH_SHORT).show();
+                                    }
+                                });
 
                                 //홈화면으로 돌아가는 작업을 한다.
                                 Intent intent = new Intent();
@@ -215,13 +236,32 @@ public class LoginActivity extends AppCompatActivity implements
 
                             //데이터베이스에 유저정보 등록
                             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-//                            database = FirebaseDatabase.getInstance();
+                            uid=user.getUid();
                             myRef =  FirebaseDatabase.getInstance().getReference();
-                            myRef.child("users").child(user.getUid()).child("name").setValue(user.getDisplayName());
-                            myRef.child("users").child(user.getUid()).child("email").setValue(user.getEmail());
-                            myRef.child("users").child(user.getUid()).child("isBusiness(0(not),1(applying),2(finish))").setValue(0);
+                            myRef.child("users").child(uid).child("name").setValue(user.getDisplayName());
+                            myRef.child("users").child(uid).child("email").setValue(user.getEmail());
+
+                            //데이터베이스에서 사업자확인 항목이 있는지 확인하기 위하여 불러옴
+                            myRef.child("users").child(uid).child("isBusiness(0(not),1(applying),2(finish))").addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(DataSnapshot dataSnapshot) {
+                                    Toast.makeText(LoginActivity.this, "로그인 사업자 여부 데이터 가져오기 성공", Toast.LENGTH_SHORT).show();
+                                    // 사업자항목이 없으면 새로 생성
+                                    if(dataSnapshot.getValue()==null) {
+                                        myRef.child("users").child(uid).child("isBusiness(0(not),1(applying),2(finish))").setValue(0);
+                                    }
+                                }
+                                @Override
+                                public void onCancelled(DatabaseError databaseError) {
+                                    Toast.makeText(LoginActivity.this, "로그인 사업자 여부 데이터 가져오기 실패", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+
+
 
                             //창 닫기
+                            Intent intent = new Intent();
+                            setResult(RESULT_OK, intent);
                             finish();
                         } else {
                             Log.w("구글 로그인", "파이어베이스 연동 실패", task.getException());
