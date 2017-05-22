@@ -47,8 +47,24 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textPersonName"
-                android:textSize="11dp"
-                android:hint="이름을 입력해주세요" />
+                android:textSize="11sp"
+                android:hint="이름을 입력해주세요." />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="2">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="사업자 등록번호 : "/>
+            <EditText
+                android:id="@+id/businessRegisterNum"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="phone"
+                android:textSize="11sp"
+                android:hint="사업자 등록번호를 입력해주세요." />
         </LinearLayout>
         <LinearLayout
             android:layout_width="match_parent"
@@ -63,8 +79,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="phone"
-                android:textSize="11dp"
-                android:hint="전화번호를 입력해주세요" />
+                android:textSize="11sp"
+                android:hint="연락 가능한 전화번호를 입력해주세요." />
         </LinearLayout>
         <LinearLayout
             android:layout_width="match_parent"
@@ -79,7 +95,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textPersonName"
-                android:textSize="11dp"
+                android:textSize="11sp"
                 android:hint="ex) OO치킨 잠실본점" />
         </LinearLayout>
         <LinearLayout
@@ -93,7 +109,7 @@
                 android:text="취급 음식"
                 android:layout_weight="1"/>
             <RadioGroup
-                android:id="@+id/handleRadio"
+                android:id="@+id/handleFoodRadio"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:orientation="horizontal"
@@ -104,7 +120,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:textSize="11dp"
+                    android:textSize="11sp"
                     android:text="치킨" />
 
                 <RadioButton
@@ -112,7 +128,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:textSize="11dp"
+                    android:textSize="11sp"
                     android:text="피자" />
 
                 <RadioButton
@@ -120,7 +136,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:textSize="11dp"
+                    android:textSize="11sp"
                     android:text="햄버거" />
 
                 <RadioButton
@@ -128,7 +144,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:textSize="11dp"
+                    android:textSize="11sp"
                     android:text="족발" />
 
                 <RadioButton
@@ -136,14 +152,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:textSize="11dp"
+                    android:textSize="11sp"
                     android:text="테이크 아웃" />
                 <RadioButton
                     android:id="@+id/radioEtc"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:textSize="11dp"
+                    android:textSize="11sp"
                     android:text="기타" />
             </RadioGroup>
         </LinearLayout>
@@ -157,14 +173,15 @@
                 android:layout_width="wrap_content"
                 android:layout_height="0dp"
                 android:layout_weight="1"
-                android:textSize="11dp"
+                android:textSize="11sp"
                 android:text="주소 찾기"/>
             <EditText
-                android:id="@+id/addressText"
+                android:id="@+id/marketAddress1"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
-                android:textSize="11dp"
+                android:textSize="11sp"
+                android:hint="주소찾기를 눌러주세요."
                 android:editable="false"/>
         </LinearLayout>
         <LinearLayout
@@ -177,12 +194,12 @@
                 android:layout_height="wrap_content"
                 android:text="상세 주소 : "/>
             <EditText
-                android:id="@+id/marketAddress"
+                android:id="@+id/marketAddress2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="text"
-                android:textSize="11dp"
-                android:hint="나머지 주소를 입력해주세요" />
+                android:textSize="11sp"
+                android:hint="나머지 주소를 입력해주세요." />
         </LinearLayout>
         <LinearLayout
             android:layout_width="match_parent"
@@ -197,8 +214,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="phone"
-                android:textSize="11dp"
-                android:hint="전화번호를 입력해주세요" />
+                android:textSize="11sp"
+                android:hint="전화번호를 입력해주세요." />
         </LinearLayout>
         <LinearLayout
             android:layout_width="match_parent"
@@ -214,12 +231,14 @@
                     android:layout_height="wrap_content"
                     android:text="매장 대표사진 : "/>
                 <Button
+                    android:id="@+id/loadImage"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="불러오기"/>
             </LinearLayout>
 
             <ImageView
+                android:id="@+id/marketImageView"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
         </LinearLayout>

@@ -1,39 +1,63 @@
 package org.androidtown.baseballproto;
 
 import android.*;
+import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.databinding.DataBindingUtil;
+import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
+import android.provider.MediaStore;
 import android.provider.Settings;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.IgnoreExtraProperties;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.UploadTask;
+
+import com.squareup.picasso.Callback;
+import com.squareup.picasso.Picasso;
 
 import org.androidtown.baseballproto.databinding.ActivityBusinessSignupBinding;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Hashtable;
+
 public class BusinessSignupActivity extends AppCompatActivity {
     private static final int SEARCH_ADDRESS_ACTIVITY = 10000;
+    private static final int GET_MARKET_IMAGE = 7000 ;
 
     String uid;
     int isBusiness;     //사업자 구분하기 위해 선언
     ActivityBusinessSignupBinding dataBinding;  //데이터 바인딩
     DatabaseReference myRef;
+
+    Bitmap bitmap=null;
+    ProgressDialog dialog;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,11 +65,11 @@ public class BusinessSignupActivity extends AppCompatActivity {
         dataBinding = DataBindingUtil.setContentView(this, R.layout.activity_business_signup);
 
         //주소찾기 란 입력하지 못하게 하기 위해 설정
-        dataBinding.addressText.setInputType(0);
-        dataBinding.addressText.setFocusable(false);
-        dataBinding.addressText.setClickable(false);
+        dataBinding.marketAddress1.setInputType(0);
+        dataBinding.marketAddress1.setFocusable(false);
+        dataBinding.marketAddress1.setClickable(false);
 
-        //주소찾기 버튼 클릭 시 다음에서 지원하는 주소찾기 창을 띄움
+        //주소찾기 버튼 클릭 시 Daum에서 지원하는 주소찾기 창을 띄움
         dataBinding.searchAddress.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -56,14 +80,22 @@ public class BusinessSignupActivity extends AppCompatActivity {
 
 
         //uid 가져오기
-        Intent intent=getIntent();
+        Intent intent = getIntent();
         uid = intent.getStringExtra("uid");
-        isBusiness=intent.getIntExtra("isBusiness",-1);
+        isBusiness = intent.getIntExtra("isBusiness", -1);
+
+        dataBinding.loadImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                startActivityForResult(i, GET_MARKET_IMAGE);
+            }
+        });
 
 
 
         //유저가 고객이고 사업자 등록신청을 하는 경우 화면 설정
-        if(isBusiness==0) {
+        if (isBusiness == 0) {
             dataBinding.toolBar.setTitle("사업자 신규등록 신청");
             dataBinding.toolBar.setTitleTextColor(Color.WHITE);
             dataBinding.inputBusinessInfo.setText("사업자로 신청할 정보를 입력해 주세요");
@@ -71,23 +103,28 @@ public class BusinessSignupActivity extends AppCompatActivity {
         }
 
         //사업자 등록신청 승인을 기다리는 고객의 경우 화면 설정(임시 데이터베이스에 저장된 내용을 불러와서 세팅함)
-        else if(isBusiness==1) {
+        else if (isBusiness == 1) {
             dataBinding.toolBar.setTitle("사업자 신청정보 수정");
             dataBinding.toolBar.setTitleTextColor(Color.WHITE);
-            dataBinding.inputBusinessInfo.setText("신청할 정보를 수정합니다.");
+            dataBinding.inputBusinessInfo.setText("신청한 정보를 수정합니다.");
             dataBinding.businessSubmit.setText("수정 완료");
+
+            //데이터베이스에 저장된 데이터 가져오기 함수
+            loadData("tmp");
         }
 
         //사업자 승인이 난 고객의 경우 화면 설정(확정 데이터베이스에 저장된 내용을 불러와서 세팅함)
-        else if(isBusiness==2){
-                dataBinding.toolBar.setTitle("매장 정보 수정");
-                dataBinding.toolBar.setTitleTextColor(Color.WHITE);
-                dataBinding.inputBusinessInfo.setText("등록된 사업자 정보를 수정합니다.");
-                dataBinding.businessSubmit.setText("수정 완료");
+        else if (isBusiness == 2) {
+            dataBinding.toolBar.setTitle("매장 정보 수정");
+            dataBinding.toolBar.setTitleTextColor(Color.WHITE);
+            dataBinding.inputBusinessInfo.setText("등록된 사업자 정보를 수정합니다.");
+            dataBinding.businessSubmit.setText("수정 완료");
+
+//            loadData("market");
         }
 
         //인텐트 값이 제대로 넘어오지 않았을 경우
-        else{
+        else {
             Toast.makeText(this, "사업자 여부 불러오기 오류", Toast.LENGTH_SHORT).show();
             finish();
         }
@@ -101,94 +138,11 @@ public class BusinessSignupActivity extends AppCompatActivity {
         dataBinding.businessSubmit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
-                //고객이 사업자 등록 신청을 하는경우, 임시 데이터베이스로 입력된 정보를 넣는다.
-                if(isBusiness==0){
-                    if(textCheck()){
-                        //데이터베이스 초기화
-                        myRef = FirebaseDatabase.getInstance().getReference();
-                        myRef.child("tmp").child(uid).child("userName").setValue(dataBinding.manName.getText().toString());
-                        myRef.child("tmp").child(uid).child("userTel").setValue(dataBinding.manTel.getText().toString());
-                        myRef.child("tmp").child(uid).child("marketName").setValue(dataBinding.marketName.getText().toString());
-                        switch(dataBinding.handleRadio.getCheckedRadioButtonId()){
-                            case R.id.radioChicken:
-                                myRef.child("tmp").child(uid).child("handleFood").setValue(1);
-                                break;
-                            case R.id.radioPizza:
-                                myRef.child("tmp").child(uid).child("handleFood").setValue(2);
-                                break;
-                            case R.id.radioBurger:
-                                myRef.child("tmp").child(uid).child("handleFood").setValue(3);
-                                break;
-                            case R.id.radioPig:
-                                myRef.child("tmp").child(uid).child("handleFood").setValue(4);
-                                break;
-                            case R.id.radioTake:
-                                myRef.child("tmp").child(uid).child("handleFood").setValue(5);
-                                break;
-                            case R.id.radioEtc:
-                                myRef.child("tmp").child(uid).child("handleFood").setValue(6);
-                                break;
-                            default:
-                                myRef.child("tmp").child(uid).child("handleFood").setValue(0);
-                                break;
-                        }
-                        myRef.child("tmp").child(uid).child("marketAddress").setValue(dataBinding.addressText.getText().toString() + " " + dataBinding.marketAddress.getText().toString());
-                        myRef.child("tmp").child(uid).child("marketTel").setValue(dataBinding.marketTel.getText().toString());
-                        myRef.child("users").child(uid).child("isBusiness(0(not),1(applying),2(finish))").setValue(1);
-                        Toast.makeText(BusinessSignupActivity.this, "신청 되었습니다.", Toast.LENGTH_SHORT).show();
-                        finish();
-                    }
-                }
-                //등록 신청 중인 고객이 수정을 할 경우, 마찬가지로 임시 데이터베이스로 입력된 정보를 넣는다.
-                else if(isBusiness==1){
-                    if(textCheck()){
-                        //데이터베이스 초기화
-                        myRef = FirebaseDatabase.getInstance().getReference();
-                        myRef.child("tmp").child(uid).child("userName").setValue(dataBinding.manName.getText().toString());
-                        myRef.child("tmp").child(uid).child("userTel").setValue(dataBinding.manTel.getText().toString());
-                        myRef.child("tmp").child(uid).child("marketName").setValue(dataBinding.marketName.getText().toString());
-                        switch(dataBinding.handleRadio.getCheckedRadioButtonId()){
-                            case R.id.radioChicken:
-                                myRef.child("tmp").child(uid).child("handleFood").setValue(1);
-                                break;
-                            case R.id.radioPizza:
-                                myRef.child("tmp").child(uid).child("handleFood").setValue(2);
-                                break;
-                            case R.id.radioBurger:
-                                myRef.child("tmp").child(uid).child("handleFood").setValue(3);
-                                break;
-                            case R.id.radioPig:
-                                myRef.child("tmp").child(uid).child("handleFood").setValue(4);
-                                break;
-                            case R.id.radioTake:
-                                myRef.child("tmp").child(uid).child("handleFood").setValue(5);
-                                break;
-                            case R.id.radioEtc:
-                                myRef.child("tmp").child(uid).child("handleFood").setValue(6);
-                                break;
-                            default:
-                                myRef.child("tmp").child(uid).child("handleFood").setValue(0);
-                                break;
-                            }
-                        myRef.child("tmp").child(uid).child("marketAddress").setValue(dataBinding.addressText.getText().toString() + " " + dataBinding.marketAddress.getText().toString());
-                        myRef.child("tmp").child(uid).child("marketTel").setValue(dataBinding.marketTel.getText().toString());
-                        //하위 종목 추가 테스트
-//                        myRef.child("tmp").child(uid).child("menu").child("테스트").setValue("메뉴");
-                        Toast.makeText(BusinessSignupActivity.this, "수정 되었습니다.", Toast.LENGTH_SHORT).show();
-                        finish();
-                    }
-                }
-
-                //사업자 고객이 수정을 할 경우엔 확정 데이터베이스에 입력된 정보를 수정한다.
-                else if(isBusiness==2){
-                    if(textCheck()){
-
-                    }
+                if (textCheck()) {
+                    submitAlert();
                 }
             }
         });
-
     }
 
     public boolean textCheck(){
@@ -213,11 +167,11 @@ public class BusinessSignupActivity extends AppCompatActivity {
             Toast.makeText(this, "취급 음식을 체크 해주세요", Toast.LENGTH_SHORT).show();
             return false;
         }
-        if(dataBinding.addressText.length()<=0){
+        if(dataBinding.marketAddress1.length()<=0){
             Toast.makeText(this, "주소를 검색하여 주세요.", Toast.LENGTH_SHORT).show();
             return false;
         }
-        if(dataBinding.marketAddress.length()<=0){
+        if(dataBinding.marketAddress2.length()<=0){
             Toast.makeText(this, "상세 주소를 입력해주세요.", Toast.LENGTH_SHORT).show();
             return false;
         }
@@ -225,7 +179,73 @@ public class BusinessSignupActivity extends AppCompatActivity {
             Toast.makeText(this, "매장 전화번호를 입력해주세요.", Toast.LENGTH_SHORT).show();
             return false;
         }
+        if(bitmap==null){
+            Toast.makeText(this, "매장 사진을 등록해주세요.", Toast.LENGTH_SHORT).show();
+            return false;
+        }
         return true;
+    }
+
+    public void submitAlert(){
+        AlertDialog.Builder builder = new AlertDialog.Builder(BusinessSignupActivity.this);
+        builder.setTitle("확인창");
+        builder.setMessage("이대로 제출하시겠습니까?");
+
+        builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+                //고객이 사업자 등록 신청을 하는경우와 신청 중인 고객이 수정을 하는 경우, 임시 데이터베이스로 입력된 정보를 넣는다.
+                if(isBusiness==0||isBusiness==1) {
+                    //데이터베이스 초기화
+                    myRef = FirebaseDatabase.getInstance().getReference();
+                    myRef.child("tmp").child(uid).child("manName").setValue(dataBinding.manName.getText().toString());
+                    myRef.child("tmp").child(uid).child("manTel").setValue(dataBinding.manTel.getText().toString());
+                    myRef.child("tmp").child(uid).child("businessRegisterNum").setValue(dataBinding.businessRegisterNum.getText().toString());
+                    myRef.child("tmp").child(uid).child("marketName").setValue(dataBinding.marketName.getText().toString());
+                    switch (dataBinding.handleFoodRadio.getCheckedRadioButtonId()) {
+                        case R.id.radioChicken:
+                            myRef.child("tmp").child(uid).child("handleFood").setValue(1);
+                            break;
+                        case R.id.radioPizza:
+                            myRef.child("tmp").child(uid).child("handleFood").setValue(2);
+                            break;
+                        case R.id.radioBurger:
+                            myRef.child("tmp").child(uid).child("handleFood").setValue(3);
+                            break;
+                        case R.id.radioPig:
+                            myRef.child("tmp").child(uid).child("handleFood").setValue(4);
+                            break;
+                        case R.id.radioTake:
+                            myRef.child("tmp").child(uid).child("handleFood").setValue(5);
+                            break;
+                        case R.id.radioEtc:
+                            myRef.child("tmp").child(uid).child("handleFood").setValue(6);
+                            break;
+                        default:
+                            myRef.child("tmp").child(uid).child("handleFood").setValue(0);
+                            break;
+                    }
+                    myRef.child("tmp").child(uid).child("marketAddress1").setValue(dataBinding.marketAddress1.getText().toString());
+                    myRef.child("tmp").child(uid).child("marketAddress2").setValue(dataBinding.marketAddress2.getText().toString());
+                    myRef.child("tmp").child(uid).child("marketTel").setValue(dataBinding.marketTel.getText().toString());
+                    myRef.child("users").child(uid).child("isBusiness(0(not),1(applying),2(finish))").setValue(1);
+                    uploadImage();
+                    Toast.makeText(BusinessSignupActivity.this, "제출 완료.", Toast.LENGTH_SHORT).show();
+                    finish();
+                }
+            }
+        });
+        //닫기
+        builder.setNegativeButton("취소", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+            }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.setCancelable(false);
+        dialog.show();
     }
 
     //뒤로가기 버튼 기능 설정
@@ -333,8 +353,112 @@ public class BusinessSignupActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if(requestCode==SEARCH_ADDRESS_ACTIVITY&&resultCode==RESULT_OK){
-            dataBinding.addressText.setText(data.getStringExtra("data"));   //인텐트로 받아온 주소값을 텍스트에 설정한다
+            dataBinding.marketAddress1.setText(data.getStringExtra("data"));   //인텐트로 받아온 주소값을 텍스트에 설정한다
         }
+        else if(requestCode==GET_MARKET_IMAGE&&resultCode==RESULT_OK) {
+            Uri image = data.getData();
+            try {
+                bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), image);
+                dataBinding.marketImageView.setImageBitmap(bitmap);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+    //데이터베이스에서 데이터를 로드해서 세팅해주는 함수
+    public  void loadData(String s){
+        dialog=new ProgressDialog(BusinessSignupActivity.this);
+        dialog.setProgress(ProgressDialog.STYLE_SPINNER);
+        dialog.setMessage("데이터를 불러오는 중입니다...");
+        dialog.setCancelable(false);
+        dialog.show();
+        //데이터 불러와서 화면에 세팅하기
+        //데이터베이스 초기화
+        myRef = FirebaseDatabase.getInstance().getReference();
+
+        myRef.child(s).child(uid).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                MarketInfo data = dataSnapshot.getValue(MarketInfo.class);
+                dataBinding.manName.setText(data.manName);
+                dataBinding.businessRegisterNum.setText(data.businessRegisterNum);
+                dataBinding.manTel.setText(data.manTel);
+                dataBinding.marketName.setText(data.marketName);
+                switch ((int)data.handleFood){
+                    case 1:
+                        dataBinding.handleFoodRadio.check(R.id.radioChicken);
+                        break;
+                    case 2:
+                        dataBinding.handleFoodRadio.check(R.id.radioPizza);
+                        break;
+                    case 3:
+                        dataBinding.handleFoodRadio.check(R.id.radioBurger);
+                        break;
+                    case 4:
+                        dataBinding.handleFoodRadio.check(R.id.radioPig);
+                        break;
+                    case 5:
+                        dataBinding.handleFoodRadio.check(R.id.radioTake);
+                        break;
+                    case 6:
+                        dataBinding.handleFoodRadio.check(R.id.radioEtc);
+                        break;
+                    default:
+                        dataBinding.handleFoodRadio.clearCheck();
+                        break;
+                }
+                dataBinding.marketAddress1.setText(data.marketAddress1);
+                dataBinding.marketAddress2.setText(data.marketAddress2);
+                dataBinding.marketTel.setText(data.marketTel);
+                Picasso.with(getApplicationContext())
+                        .load(data.marketImageUrl)
+                        .fit()
+                        .centerInside()
+                        .into(dataBinding.marketImageView, new Callback.EmptyCallback() {
+                            @Override public void onSuccess() {
+                                BitmapDrawable d = (BitmapDrawable)dataBinding.marketImageView.getDrawable();
+                                bitmap = d.getBitmap();
+                                dialog.dismiss();
+                            }
+                        });
+
+
+//                    Toast.makeText(BusinessSignupActivity.this, "데이터 가져오기 성공", Toast.LENGTH_SHORT).show();
+            }
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+//                    Toast.makeText(BusinessSignupActivity.this, "데이터 가져오기 실패", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    public void uploadImage(){
+
+        StorageReference  mStorageRef = FirebaseStorage.getInstance().getReference();
+        StorageReference mountainsRef = mStorageRef.child("tmp").child(uid).child("market.jpg");
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+        byte[] data = baos.toByteArray();
+
+        UploadTask uploadTask = mountainsRef.putBytes(data);
+        uploadTask.addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception exception) {
+                // Handle unsuccessful uploads
+            }
+        }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+            @SuppressWarnings("VisibleForTests")
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                // taskSnapshot.getMetadata() contains file metadata such as size, content-type, and download URL.
+                Uri downloadUrl = taskSnapshot.getDownloadUrl();
+                String photoUri =  String.valueOf(downloadUrl);
+                myRef.child("tmp").child(uid).child("marketImageUrl").setValue(photoUri);
+            }
+        });
     }
 }
 

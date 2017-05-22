@@ -106,7 +106,7 @@ public class LoginActivity extends AppCompatActivity implements
         facebookLoginButton.registerCallback(mCallbackManager, new FacebookCallback<LoginResult>() {
             @Override
             public void onSuccess(LoginResult loginResult) {    //페이스북 로그인을 성공했을 시
-                Toast.makeText(LoginActivity.this, "페이스북 계정 연결 성공", Toast.LENGTH_SHORT).show();
+//                Toast.makeText(LoginActivity.this, "페이스북 계정 연결 성공", Toast.LENGTH_SHORT).show();
                 dialog=new ProgressDialog(LoginActivity.this);
                 dialog.setProgress(ProgressDialog.STYLE_SPINNER);
                 dialog.setMessage("로그인 중입니다...");
@@ -166,7 +166,7 @@ public class LoginActivity extends AppCompatActivity implements
                                 myRef.child("users").child(uid).child("isBusiness(0(not),1(applying),2(finish))").addListenerForSingleValueEvent(new ValueEventListener() {
                                     @Override
                                     public void onDataChange(DataSnapshot dataSnapshot) {
-                                        Toast.makeText(LoginActivity.this, "로그인 사업자 여부 데이터 가져오기 성공", Toast.LENGTH_SHORT).show();
+//                                        Toast.makeText(LoginActivity.this, "로그인 사업자 여부 데이터 가져오기 성공", Toast.LENGTH_SHORT).show();
                                         // 사업자항목이 없으면 새로 생성
                                         if(dataSnapshot.getValue()==null) {
                                             myRef.child("users").child(uid).child("isBusiness(0(not),1(applying),2(finish))").setValue(0);
@@ -206,7 +206,7 @@ public class LoginActivity extends AppCompatActivity implements
             if (result.isSuccess()) {
                 // Signed in successfully, show authenticated UI.
                 GoogleSignInAccount acct = result.getSignInAccount();
-                Toast.makeText(LoginActivity.this, "구글 계정 연결 성공", Toast.LENGTH_SHORT).show();
+//                Toast.makeText(LoginActivity.this, "구글 계정 연결 성공", Toast.LENGTH_SHORT).show();
                 dialog=new ProgressDialog(this);
                 dialog.setProgress(ProgressDialog.STYLE_SPINNER);
                 dialog.setMessage("로그인 중입니다...");
@@ -245,7 +245,7 @@ public class LoginActivity extends AppCompatActivity implements
                             myRef.child("users").child(uid).child("isBusiness(0(not),1(applying),2(finish))").addListenerForSingleValueEvent(new ValueEventListener() {
                                 @Override
                                 public void onDataChange(DataSnapshot dataSnapshot) {
-                                    Toast.makeText(LoginActivity.this, "로그인 사업자 여부 데이터 가져오기 성공", Toast.LENGTH_SHORT).show();
+//                                    Toast.makeText(LoginActivity.this, "로그인 사업자 여부 데이터 가져오기 성공", Toast.LENGTH_SHORT).show();
                                     // 사업자항목이 없으면 새로 생성
                                     if(dataSnapshot.getValue()==null) {
                                         myRef.child("users").child(uid).child("isBusiness(0(not),1(applying),2(finish))").setValue(0);
@@ -275,7 +275,7 @@ public class LoginActivity extends AppCompatActivity implements
     //구글 로그인 관련 리스너
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-        Toast.makeText(this, "연결 실패", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "구글 연결 실패", Toast.LENGTH_SHORT).show();
     }
 
     //뒤로가기 버튼 기능 설정

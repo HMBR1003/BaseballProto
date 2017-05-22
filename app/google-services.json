@@ -176,6 +176,50 @@
           "status": 2
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:886923317230:android:f995428c266ffb29",
+        "android_client_info": {
+          "package_name": "org.delivery.baseball.baseballmanage"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "886923317230-l90m14plcs9u23nfrb00jt0qu6n2isq7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.delivery.baseball.baseballmanage",
+            "certificate_hash": "6cdd9d3788d3913b8ca52121c272b92d6d89cc1b"
+          }
+        },
+        {
+          "client_id": "886923317230-ksfdurhset6ak2hm20t8hjcad96oe0k3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC9h6HHpMBhc80e8M-9IWI44y_qbIjw35w"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "886923317230-ksfdurhset6ak2hm20t8hjcad96oe0k3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
     }
   ],
   "configuration_version": "1"
