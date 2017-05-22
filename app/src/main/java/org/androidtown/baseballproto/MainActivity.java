@@ -126,6 +126,38 @@ public class MainActivity extends AppCompatActivity
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
                 user = firebaseAuth.getCurrentUser();
                 if (user != null) {
+                    //데이터베이스 유저 영역 참조변수 선언 및 초기화
+                    DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("users");
+
+                    //데이터베이스에서 유저가 고객인지 사업자 등록중인지 사업자인지 담는 정보를 불러옴
+                    userRef.child(user.getUid()).child("isBusiness(0(not),1(applying),2(finish))").addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            isBusiness = dataSnapshot.getValue(Integer.class);
+                            if(isBusiness==0){  //고객
+                                userName.setText(user.getDisplayName()+"고객님");
+                            }
+                            else if(isBusiness==1){ //사업자 등록 신청한 사람
+                                userName.setText(user.getDisplayName()+"고객님\n사업자 등록 신청중입니다.");
+                                navNewBusiness.setTitle("사업자 신청정보 수정");
+                            }
+                            else if(isBusiness==2){ //사업자
+                                userName.setText(user.getDisplayName()+"점주님\n");
+                                navCart.setVisible(false);
+                                navOrderList.setTitle("주문 받은 내역");
+                                navReviewManage.setTitle("메뉴 관리");
+                                navChangeCol.setVisible(false);
+                                navNewBusiness.setTitle("매장 정보 수정");
+                            }
+                            else
+                                Toast.makeText(MainActivity.this, "사업자여부 데이터가 0,1,2중 하나가 아닙니다.", Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(MainActivity.this, "메인 사업자여부 데이터 가져오기 성공", Toast.LENGTH_SHORT).show();
+                        }
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+//                            Toast.makeText(MainActivity.this, "메인 사업자여부 데이터 가져오기 실패", Toast.LENGTH_SHORT).show();
+                        }
+                    });
                     //내비게이션 메뉴 설정
                     navLogin.setTitle("로그아웃");
                     userEmail.setText(user.getEmail());
@@ -308,8 +340,8 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void onStart() { //온스타트 시 파이어베이스 계정 객체에 리스너 부착
-        super.onStart();
+    public void onResume() { //온스타트 시 파이어베이스 계정 객체에 리스너 부착
+        super.onResume();
         mAuth.addAuthStateListener(mAuthListener);
     }
 
@@ -326,41 +358,7 @@ public class MainActivity extends AppCompatActivity
         super.onActivityResult(requestCode, resultCode, data);
         //로그인 액티비티에서 로그인 성공 응답을 보내왔을 경우
         if(requestCode==LOGIN_REQUEST && resultCode==RESULT_OK){
-            //유저 객체 고기화
-            mAuth = FirebaseAuth.getInstance();
-            user = mAuth.getCurrentUser();
-            //데이터베이스 유저 영역 참조변수 선언 및 초기화
-            DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("users");
 
-            //데이터베이스에서 유저가 고객인지 사업자 등록중인지 사업자인지 담는 정보를 불러옴
-            userRef.child(user.getUid()).child("isBusiness(0(not),1(applying),2(finish))").addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    isBusiness = dataSnapshot.getValue(Integer.class);
-                    if(isBusiness==0){  //고객
-                        userName.setText(user.getDisplayName()+"고객님");
-                    }
-                    else if(isBusiness==1){ //사업자 등록 신청한 사람
-                        userName.setText(user.getDisplayName()+"고객님\n사업자 등록 신청중입니다.");
-                        navNewBusiness.setTitle("사업자 신청정보 수정");
-                    }
-                    else if(isBusiness==2){ //사업자
-                        userName.setText(user.getDisplayName()+"점주님\n");
-                        navCart.setVisible(false);
-                        navOrderList.setTitle("주문 받은 내역");
-                        navReviewManage.setTitle("메뉴 관리");
-                        navChangeCol.setVisible(false);
-                        navNewBusiness.setTitle("매장 정보 수정");
-                    }
-                    else
-                        Toast.makeText(MainActivity.this, "사업자여부 데이터가 0,1,2중 하나가 아닙니다.", Toast.LENGTH_SHORT).show();
-//                    Toast.makeText(MainActivity.this, "메인 사업자여부 데이터 가져오기 성공", Toast.LENGTH_SHORT).show();
-                }
-                @Override
-                public void onCancelled(DatabaseError databaseError) {
-//                            Toast.makeText(MainActivity.this, "메인 사업자여부 데이터 가져오기 실패", Toast.LENGTH_SHORT).show();
-                }
-            });
         }
     }
 

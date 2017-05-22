@@ -72,6 +72,13 @@ public class HomeFragment extends Fragment {
                 viewPager.setCurrentItem(3);
             }
         });
-
+        homeBinding.storageTest.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                MainActivity activity = (MainActivity)getActivity();
+                Intent intent = new Intent(activity,StorageActivity.class);
+                startActivity(intent);
+            }
+        });
     }
 }
