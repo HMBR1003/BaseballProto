@@ -69,6 +69,9 @@ public class BusinessSignupActivity extends AppCompatActivity {
         dataBinding.marketAddress1.setFocusable(false);
         dataBinding.marketAddress1.setClickable(false);
 
+        //프로그레스 다이얼로그 동적할당
+        dialog=new ProgressDialog(BusinessSignupActivity.this);
+
         //주소찾기 버튼 클릭 시 Daum에서 지원하는 주소찾기 창을 띄움
         dataBinding.searchAddress.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -185,12 +188,14 @@ public class BusinessSignupActivity extends AppCompatActivity {
         }
         return true;
     }
-
+    //유저에게 최종확인후 데이터 넣는 작업을 하는 함수
     public void submitAlert(){
+
+        //확인창 만들기
         AlertDialog.Builder builder = new AlertDialog.Builder(BusinessSignupActivity.this);
         builder.setTitle("확인창");
         builder.setMessage("이대로 제출하시겠습니까?");
-
+        //확인 버튼설정 및 버튼을 눌렀을 때 동작 설정
         builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
@@ -231,8 +236,14 @@ public class BusinessSignupActivity extends AppCompatActivity {
                     myRef.child("tmp").child(uid).child("marketTel").setValue(dataBinding.marketTel.getText().toString());
                     myRef.child("users").child(uid).child("isBusiness(0(not),1(applying),2(finish))").setValue(1);
                     uploadImage();
-                    Toast.makeText(BusinessSignupActivity.this, "제출 완료.", Toast.LENGTH_SHORT).show();
-                    finish();
+                }
+
+                //사장 고객이 매장 정보를 수정하는 경우
+               else  if(isBusiness==3){
+
+                }
+                else{
+                    Toast.makeText(BusinessSignupActivity.this, "데이터 저장 시 사업자 여부 데이터 오류", Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -352,14 +363,21 @@ public class BusinessSignupActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+
+        //주소찾기 화면에서 결과를 받아왔을 경우
         if(requestCode==SEARCH_ADDRESS_ACTIVITY&&resultCode==RESULT_OK){
             dataBinding.marketAddress1.setText(data.getStringExtra("data"));   //인텐트로 받아온 주소값을 텍스트에 설정한다
         }
+        //매장 대표사진 설정에서 결과를 받아왔을 경우
         else if(requestCode==GET_MARKET_IMAGE&&resultCode==RESULT_OK) {
-            Uri image = data.getData();
+            Uri image = data.getData(); //인텐트에서 이미지에 대한 데이터 추출
             try {
+                //이미지를 비트맵 변수로 저장
                 bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), image);
+                //이미지뷰에 비트맵 변수를 세팅
                 dataBinding.marketImageView.setImageBitmap(bitmap);
+
+                //예외 처리 문장
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -369,15 +387,16 @@ public class BusinessSignupActivity extends AppCompatActivity {
 
     //데이터베이스에서 데이터를 로드해서 세팅해주는 함수
     public  void loadData(String s){
-        dialog=new ProgressDialog(BusinessSignupActivity.this);
+        //데이터 불러오는 중이라고 알림창 띄우기
         dialog.setProgress(ProgressDialog.STYLE_SPINNER);
         dialog.setMessage("데이터를 불러오는 중입니다...");
         dialog.setCancelable(false);
         dialog.show();
-        //데이터 불러와서 화면에 세팅하기
+
         //데이터베이스 초기화
         myRef = FirebaseDatabase.getInstance().getReference();
 
+        //데이터 불러와서 화면에 세팅하기
         myRef.child(s).child(uid).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
@@ -412,6 +431,8 @@ public class BusinessSignupActivity extends AppCompatActivity {
                 dataBinding.marketAddress1.setText(data.marketAddress1);
                 dataBinding.marketAddress2.setText(data.marketAddress2);
                 dataBinding.marketTel.setText(data.marketTel);
+
+                //피카소를 이용하여 저장소에 저장된 사진을 url로 이미지뷰에 연결하기
                 Picasso.with(getApplicationContext())
                         .load(data.marketImageUrl)
                         .fit()
@@ -435,18 +456,30 @@ public class BusinessSignupActivity extends AppCompatActivity {
     }
 
     public void uploadImage(){
+        //데이터 저장하는 중이라고 알림창 띄우기
+        dialog.setProgress(ProgressDialog.STYLE_SPINNER);
+        dialog.setMessage("데이터를 저장하는 중입니다...");
+        dialog.setCancelable(false);
+        dialog.show();
 
+        //저장소에 대한 참조 만들기
         StorageReference  mStorageRef = FirebaseStorage.getInstance().getReference();
+        //실제로 이미지가 저장될 곳의 참조
         StorageReference mountainsRef = mStorageRef.child("tmp").child(uid).child("market.jpg");
 
+        //비트맵을 jpg로 변환시켜서 변수에 저장
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
         byte[] data = baos.toByteArray();
 
+        //jpg형식으로 저장된 변수를 저장소에 업로드하는 함수
         UploadTask uploadTask = mountainsRef.putBytes(data);
+        //성공했을 시와 실패했을 시를 받아오는 리스너 부착
         uploadTask.addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception exception) {
+                dialog.dismiss();
+                Toast.makeText(BusinessSignupActivity.this, "제출 실패.", Toast.LENGTH_SHORT).show();
                 // Handle unsuccessful uploads
             }
         }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
@@ -457,6 +490,9 @@ public class BusinessSignupActivity extends AppCompatActivity {
                 Uri downloadUrl = taskSnapshot.getDownloadUrl();
                 String photoUri =  String.valueOf(downloadUrl);
                 myRef.child("tmp").child(uid).child("marketImageUrl").setValue(photoUri);
+                dialog.dismiss();
+                Toast.makeText(BusinessSignupActivity.this, "제출 완료.", Toast.LENGTH_SHORT).show();
+                finish();
             }
         });
     }

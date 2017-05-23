@@ -77,6 +77,7 @@ public class MainActivity extends AppCompatActivity
     FirebaseAuth mAuth;
     FirebaseAuth.AuthStateListener mAuthListener;
     FirebaseUser user;
+    String uid;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -212,9 +213,9 @@ public class MainActivity extends AppCompatActivity
     public boolean onNavigationItemSelected(MenuItem item) {
         // Handle navigation view item clicks here.
         int id = item.getItemId();
-
+        user = FirebaseAuth.getInstance().getCurrentUser();
         if (id == R.id.nav_login) {
-            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+
             if(user==null) {
                 Intent intent = new Intent(this, LoginActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -243,7 +244,6 @@ public class MainActivity extends AppCompatActivity
                 dialog.show();
             }
         } else if (id == R.id.nav_cart) {  //왼쪽 슬라이드메뉴 장바구니 부분
-            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
             if(user==null) {
                 pleaseLogin();
             }
@@ -251,7 +251,6 @@ public class MainActivity extends AppCompatActivity
 
             }
         } else if (id == R.id.nav_orderList) {  //왼쪽 슬라이드메뉴 주문내역 부분
-            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
             if(user==null) {
                 pleaseLogin();
             }
@@ -268,13 +267,12 @@ public class MainActivity extends AppCompatActivity
         } else if (id == R.id.nav_changeCol) {  //왼쪽 슬라이드메뉴 경기장 변경 부분
 
         } else if (id == R.id.nav_newBusiness) {  //왼쪽 슬라이드메뉴 사업자 신규 등록 부분
-            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
             if(user==null) {
                 pleaseLogin();
             }
             else {
                 Intent intent = new Intent(this, BusinessSignupActivity.class);
-                intent.putExtra("uid",user.getUid());
+                intent.putExtra("uid",uid);
                 intent.putExtra("isBusiness",isBusiness);
                 intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivityForResult(intent, BUSINESS_SIGNUP_REQUEST);
@@ -342,6 +340,10 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onResume() { //온스타트 시 파이어베이스 계정 객체에 리스너 부착
         super.onResume();
+        user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null) {
+            uid=user.getUid();
+        }
         mAuth.addAuthStateListener(mAuthListener);
     }
 
