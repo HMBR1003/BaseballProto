@@ -228,6 +228,8 @@ public class MainActivity extends AppCompatActivity
                 builder.setPositiveButton("예", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
+                        DatabaseReference myRef = FirebaseDatabase.getInstance().getReference();
+                        myRef.child("users").child(user.getUid()).child("isLogin").setValue(0);
                         mAuth.signOut();
                         LoginManager.getInstance().logOut();
                         Toast.makeText(MainActivity.this, "로그아웃 되었습니다.", Toast.LENGTH_SHORT).show();
@@ -362,6 +364,27 @@ public class MainActivity extends AppCompatActivity
         if(requestCode==LOGIN_REQUEST && resultCode==RESULT_OK){
 
         }
+    }
+
+    //푸쉬 메세지를 수신하여 그 데이터를 인텐트로 받아온 경우의 동작
+    @Override
+    protected void onNewIntent(Intent intent) {
+        if (intent != null) {
+            processIntent(intent);
+        }
+        super.onNewIntent(intent);
+    }
+    private void processIntent(Intent intent) {
+        String from = intent.getStringExtra("from");
+        if (from == null) {
+            return;
+        }
+
+        String title = intent.getStringExtra("title");
+        String contents = intent.getStringExtra("contents");
+
+
+
     }
 
 

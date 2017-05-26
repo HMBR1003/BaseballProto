@@ -41,6 +41,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.iid.FirebaseInstanceId;
 
 import org.androidtown.baseballproto.databinding.ActivityLoginBinding;
 
@@ -161,6 +162,8 @@ public class LoginActivity extends AppCompatActivity implements
                                 uid=user.getUid();
                                 myRef.child("users").child(user.getUid()).child("name").setValue(user.getDisplayName());
                                 myRef.child("users").child(user.getUid()).child("email").setValue(user.getEmail());
+                                myRef.child("users").child(user.getUid()).child("isLogin").setValue(1);
+                                myRef.child("users").child(uid).child("pushToken").setValue(FirebaseInstanceId.getInstance().getToken());
 
                                 //데이터베이스에서 사업자확인 항목이 있는지 확인하기 위하여 불러옴
                                 myRef.child("users").child(uid).child("isBusiness(0(not),1(applying),2(finish))").addListenerForSingleValueEvent(new ValueEventListener() {
@@ -240,6 +243,8 @@ public class LoginActivity extends AppCompatActivity implements
                             myRef =  FirebaseDatabase.getInstance().getReference();
                             myRef.child("users").child(uid).child("name").setValue(user.getDisplayName());
                             myRef.child("users").child(uid).child("email").setValue(user.getEmail());
+                            myRef.child("users").child(user.getUid()).child("isLogin").setValue(1);
+                            myRef.child("users").child(uid).child("pushToken").setValue(FirebaseInstanceId.getInstance().getToken());
 
                             //데이터베이스에서 사업자확인 항목이 있는지 확인하기 위하여 불러옴
                             myRef.child("users").child(uid).child("isBusiness(0(not),1(applying),2(finish))").addListenerForSingleValueEvent(new ValueEventListener() {
