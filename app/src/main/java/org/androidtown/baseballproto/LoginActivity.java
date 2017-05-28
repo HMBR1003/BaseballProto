@@ -13,6 +13,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.Volley;
 import com.facebook.AccessToken;
 import com.facebook.CallbackManager;
 import com.facebook.FacebookCallback;
@@ -162,8 +164,50 @@ public class LoginActivity extends AppCompatActivity implements
                                 uid=user.getUid();
                                 myRef.child("users").child(user.getUid()).child("name").setValue(user.getDisplayName());
                                 myRef.child("users").child(user.getUid()).child("email").setValue(user.getEmail());
-                                myRef.child("users").child(user.getUid()).child("isLogin").setValue(1);
-                                myRef.child("users").child(uid).child("pushToken").setValue(FirebaseInstanceId.getInstance().getToken());
+
+                                //로그인이 되어있는 지 검사하기 위해 값을 읽는다
+                                myRef.child("users").child(uid).child("isLogin").addListenerForSingleValueEvent(new ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(DataSnapshot dataSnapshot) {
+
+                                        //로그인이 되어있을 경우
+                                        if(dataSnapshot.getValue()!=null&&dataSnapshot.getValue(Long.class) == 1) {
+                                            myRef.child("users").child(uid).child("pushToken").addListenerForSingleValueEvent(new ValueEventListener() {
+                                                @Override
+                                                public void onDataChange(DataSnapshot dataSnapshot) {
+
+                                                    //현재 기기가 로그인 된 것이 아니라면
+                                                    if(dataSnapshot.getValue(String.class)!=FirebaseInstanceId.getInstance().getToken()) {
+                                                        Toast.makeText(LoginActivity.this, "이전 기기의 로그인은 해제됩니다.", Toast.LENGTH_SHORT).show();
+
+                                                        //이전에 로그인한 기기에 푸쉬알림을 보내 강제 로그아웃시킨다
+                                                        RequestQueue queue = Volley.newRequestQueue(getApplicationContext());
+                                                        MainActivity.send("", "", "1", dataSnapshot.getValue(String.class), queue);
+
+                                                        //그 후 데이터베이스에 로그인 상태와 현재 로그인한 기기의 토큰을 등록
+                                                        myRef.child("users").child(uid).child("isLogin").setValue(1);
+                                                        myRef.child("users").child(uid).child("pushToken").setValue(FirebaseInstanceId.getInstance().getToken());
+                                                    }
+                                                }
+                                                @Override
+                                                public void onCancelled(DatabaseError databaseError) {
+
+                                                }
+                                            });
+                                        }
+
+                                        //로그인이 안 되어있거나 처음 계정을 등록하는 경우
+                                        else{
+                                            myRef.child("users").child(uid).child("isLogin").setValue(1);
+                                            myRef.child("users").child(uid).child("pushToken").setValue(FirebaseInstanceId.getInstance().getToken());
+                                        }
+
+                                    }
+                                    @Override
+                                    public void onCancelled(DatabaseError databaseError) {
+
+                                    }
+                                });
 
                                 //데이터베이스에서 사업자확인 항목이 있는지 확인하기 위하여 불러옴
                                 myRef.child("users").child(uid).child("isBusiness(0(not),1(applying),2(finish))").addListenerForSingleValueEvent(new ValueEventListener() {
@@ -243,8 +287,50 @@ public class LoginActivity extends AppCompatActivity implements
                             myRef =  FirebaseDatabase.getInstance().getReference();
                             myRef.child("users").child(uid).child("name").setValue(user.getDisplayName());
                             myRef.child("users").child(uid).child("email").setValue(user.getEmail());
-                            myRef.child("users").child(user.getUid()).child("isLogin").setValue(1);
-                            myRef.child("users").child(uid).child("pushToken").setValue(FirebaseInstanceId.getInstance().getToken());
+
+                            //로그인이 되어있는 지 검사하기 위해 값을 읽는다
+                            myRef.child("users").child(uid).child("isLogin").addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(DataSnapshot dataSnapshot) {
+
+                                    //로그인이 되어있을 경우
+                                    if(dataSnapshot.getValue()!=null&&dataSnapshot.getValue(Long.class) == 1) {
+                                        myRef.child("users").child(uid).child("pushToken").addListenerForSingleValueEvent(new ValueEventListener() {
+                                            @Override
+                                            public void onDataChange(DataSnapshot dataSnapshot) {
+
+                                                //현재 기기가 로그인 된 것이 아니라면
+                                                if(dataSnapshot.getValue(String.class)!=FirebaseInstanceId.getInstance().getToken()) {
+                                                    Toast.makeText(LoginActivity.this, "이전 기기의 로그인은 해제됩니다.", Toast.LENGTH_SHORT).show();
+
+                                                    //이전에 로그인한 기기에 푸쉬알림을 보내 강제 로그아웃시킨다
+                                                    RequestQueue queue = Volley.newRequestQueue(getApplicationContext());
+                                                    MainActivity.send("", "", "1", dataSnapshot.getValue(String.class), queue);
+
+                                                    //그 후 데이터베이스에 로그인 상태와 현재 로그인한 기기의 토큰을 등록
+                                                    myRef.child("users").child(uid).child("isLogin").setValue(1);
+                                                    myRef.child("users").child(uid).child("pushToken").setValue(FirebaseInstanceId.getInstance().getToken());
+                                                }
+                                            }
+                                            @Override
+                                            public void onCancelled(DatabaseError databaseError) {
+
+                                            }
+                                        });
+                                    }
+
+                                    //로그인이 안 되어있거나 처음 계정을 등록하는 경우
+                                    else{
+                                        myRef.child("users").child(uid).child("isLogin").setValue(1);
+                                        myRef.child("users").child(uid).child("pushToken").setValue(FirebaseInstanceId.getInstance().getToken());
+                                    }
+
+                                }
+                                @Override
+                                public void onCancelled(DatabaseError databaseError) {
+
+                                }
+                            });
 
                             //데이터베이스에서 사업자확인 항목이 있는지 확인하기 위하여 불러옴
                             myRef.child("users").child(uid).child("isBusiness(0(not),1(applying),2(finish))").addListenerForSingleValueEvent(new ValueEventListener() {

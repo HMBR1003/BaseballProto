@@ -33,6 +33,13 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
 import com.facebook.FacebookSdk;
 import com.facebook.login.LoginManager;
 import com.google.firebase.auth.FirebaseAuth;
@@ -44,10 +51,14 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import org.androidtown.baseballproto.databinding.ActivityMainBinding;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import butterknife.BindView;
 import devlight.io.library.ntb.NavigationTabBar;
@@ -122,58 +133,87 @@ public class MainActivity extends AppCompatActivity
         userName = (TextView) headerView.findViewById(R.id.userName);
 
         mAuth = FirebaseAuth.getInstance();
+        setLeftMenu(mAuth); //좌측 UI 세팅
         mAuthListener = new FirebaseAuth.AuthStateListener() {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
-                user = firebaseAuth.getCurrentUser();
-                if (user != null) {
-                    //데이터베이스 유저 영역 참조변수 선언 및 초기화
-                    DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("users");
-
-                    //데이터베이스에서 유저가 고객인지 사업자 등록중인지 사업자인지 담는 정보를 불러옴
-                    userRef.child(user.getUid()).child("isBusiness(0(not),1(applying),2(finish))").addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(DataSnapshot dataSnapshot) {
-                            isBusiness = dataSnapshot.getValue(Integer.class);
-                            if(isBusiness==0){  //고객
-                                userName.setText(user.getDisplayName()+"고객님");
-                            }
-                            else if(isBusiness==1){ //사업자 등록 신청한 사람
-                                userName.setText(user.getDisplayName()+"고객님\n사업자 등록 신청중입니다.");
-                                navNewBusiness.setTitle("사업자 신청정보 수정");
-                            }
-                            else if(isBusiness==2){ //사업자
-                                userName.setText(user.getDisplayName()+"점주님\n");
-                                navCart.setVisible(false);
-                                navOrderList.setTitle("주문 받은 내역");
-                                navReviewManage.setTitle("메뉴 관리");
-                                navChangeCol.setVisible(false);
-                                navNewBusiness.setTitle("매장 정보 수정");
-                            }
-                            else
-                                Toast.makeText(MainActivity.this, "사업자여부 데이터가 0,1,2중 하나가 아닙니다.", Toast.LENGTH_SHORT).show();
-//                    Toast.makeText(MainActivity.this, "메인 사업자여부 데이터 가져오기 성공", Toast.LENGTH_SHORT).show();
-                        }
-                        @Override
-                        public void onCancelled(DatabaseError databaseError) {
-//                            Toast.makeText(MainActivity.this, "메인 사업자여부 데이터 가져오기 실패", Toast.LENGTH_SHORT).show();
-                        }
-                    });
-                    //내비게이션 메뉴 설정
-                    navLogin.setTitle("로그아웃");
-                    userEmail.setText(user.getEmail());
-                } else {
-                    userName.setText("로그인이 필요합니다");
-                    userEmail.setText("");
-                    navLogin.setTitle("로그인");
-                    navCart.setVisible(true);
-                    navOrderList.setTitle("주문 내역");
-                    navReviewManage.setTitle("리뷰 관리");
-                    navChangeCol.setVisible(true);
-                    navNewBusiness.setTitle("사업자 신규등록 신청");
-                }
+                setLeftMenu(firebaseAuth);
             }
         };
+    }
+
+    public void setLeftMenu(FirebaseAuth firebaseAuth){
+        user = firebaseAuth.getCurrentUser();
+        if (user != null) {
+            //데이터베이스 유저 영역 참조변수 선언 및 초기화
+            DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("users");
+
+            //데이터베이스에서 유저가 고객인지 사업자 등록중인지 사업자인지 담는 정보를 불러옴
+            userRef.child(user.getUid()).child("isBusiness(0(not),1(applying),2(finish))").addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    navLogin.setVisible(true);
+                    navLogin.setTitle("로그아웃");
+                    userEmail.setText(user.getEmail());
+
+                    isBusiness = dataSnapshot.getValue(Integer.class);
+
+                    if(isBusiness==0){  //고객
+                        userName.setText(user.getDisplayName()+"고객님");
+
+                        navCart.setVisible(true);
+                        navOrderList.setVisible(true);
+                        navReviewManage.setVisible(true);
+                        navNewBusiness.setVisible(true);
+                        navChangeCol.setVisible(true);
+                    }
+                    else if(isBusiness==1){ //사업자 등록 신청한 사람
+                        userName.setText(user.getDisplayName()+"고객님\n사업자 등록 신청중입니다.");
+                        navNewBusiness.setTitle("사업자 신청정보 수정");
+
+                        navCart.setVisible(true);
+                        navOrderList.setVisible(true);
+                        navReviewManage.setVisible(true);
+                        navNewBusiness.setVisible(true);
+                        navChangeCol.setVisible(true);
+                    }
+                    else if(isBusiness==2){ //사업자
+                        userName.setText(user.getDisplayName()+"점주님\n");
+                        navCart.setVisible(false);
+                        navOrderList.setTitle("주문 받은 내역");
+                        navReviewManage.setTitle("메뉴 관리");
+                        navNewBusiness.setTitle("매장 정보 수정");
+
+                        navOrderList.setVisible(true);
+                        navReviewManage.setVisible(true);
+                        navNewBusiness.setVisible(true);
+                        navChangeCol.setVisible(true);
+                    }
+                    else
+                        Toast.makeText(MainActivity.this, "사업자여부 데이터가 0,1,2중 하나가 아닙니다.", Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(MainActivity.this, "메인 사업자여부 데이터 가져오기 성공", Toast.LENGTH_SHORT).show();
+                }
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+//                            Toast.makeText(MainActivity.this, "메인 사업자여부 데이터 가져오기 실패", Toast.LENGTH_SHORT).show();
+                }
+            });
+            //내비게이션 메뉴 설정
+        } else {
+            userName.setText("로그인이 필요합니다");
+            userEmail.setText("");
+            navLogin.setTitle("로그인");
+            navOrderList.setTitle("주문 내역");
+            navReviewManage.setTitle("리뷰 관리");
+            navNewBusiness.setTitle("사업자 신규등록 신청");
+
+            navLogin.setVisible(true);
+            navCart.setVisible(true);
+            navOrderList.setVisible(true);
+            navReviewManage.setVisible(true);
+            navChangeCol.setVisible(true);
+            navNewBusiness.setVisible(true);
+        }
     }
 
     @Override
@@ -228,10 +268,10 @@ public class MainActivity extends AppCompatActivity
                 builder.setPositiveButton("예", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        DatabaseReference myRef = FirebaseDatabase.getInstance().getReference();
-                        myRef.child("users").child(user.getUid()).child("isLogin").setValue(0);
                         mAuth.signOut();
                         LoginManager.getInstance().logOut();
+                        DatabaseReference myRef = FirebaseDatabase.getInstance().getReference();
+                        myRef.child("users").child(user.getUid()).child("isLogin").setValue(0);
                         Toast.makeText(MainActivity.this, "로그아웃 되었습니다.", Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -509,6 +549,93 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         }, 500);
+    }
+
+    //푸쉬 메세지 발송 기능 함수
+    public static void send(String title,String content,String type,String regId, RequestQueue queue) {
+
+        JSONObject requestData = new JSONObject();
+
+        try {
+            requestData.put("priority", "high");
+
+            JSONObject dataObj = new JSONObject();
+            dataObj.put("title", title);
+            dataObj.put("content", content);
+            dataObj.put("type", type);
+            requestData.put("data", dataObj);
+
+            JSONArray idArray = new JSONArray();
+            idArray.put(0, regId);
+            requestData.put("registration_ids", idArray);
+
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+
+        sendData(requestData, new SendResponseListener() {
+            @Override
+            public void onRequestCompleted() {
+            }
+
+            @Override
+            public void onRequestStarted() {
+            }
+
+            @Override
+            public void onRequestWithError(VolleyError error) {
+            }
+        },queue);
+
+    }
+
+    public interface SendResponseListener {
+        public void onRequestStarted();
+        public void onRequestCompleted();
+        public void onRequestWithError(VolleyError error);
+    }
+
+    public static void sendData(JSONObject requestData, final SendResponseListener listener, RequestQueue queue) {
+        JsonObjectRequest request = new JsonObjectRequest(
+                Request.Method.POST,
+                "https://fcm.googleapis.com/fcm/send",
+                requestData,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        listener.onRequestCompleted();
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                listener.onRequestWithError(error);
+            }
+        }
+        ) {
+            @Override
+            protected Map<String, String> getParams() throws AuthFailureError {
+                Map<String,String> params = new HashMap<String,String>();
+
+                return params;
+            }
+
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Map<String,String> headers = new HashMap<String,String>();
+                headers.put("Authorization","key=AAAAzoC_z-4:APA91bGOjx1glemYKqDZ5jjHkC405GlfJfupTo5U7O32y54C4AFmbPSJYybFEV0dcDLF4eUtygfgPPtHpP_VqxiTICxtSmQWDhSbo8C6LJ_VS5XGGTqq-jm-ig0PoC8p2XFM883ulPdB");
+
+                return headers;
+            }
+
+            @Override
+            public String getBodyContentType() {
+                return "application/json";
+            }
+        };
+
+        request.setShouldCache(false);
+        listener.onRequestStarted();
+        queue.add(request);
     }
 }
 

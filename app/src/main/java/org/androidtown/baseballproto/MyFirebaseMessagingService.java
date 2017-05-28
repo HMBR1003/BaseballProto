@@ -51,7 +51,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 DatabaseReference myRef = FirebaseDatabase.getInstance().getReference();
                 myRef.child("users").child(user.getUid()).child("isLogin").setValue(0);
             }
-            Intent intent = new Intent(this, LoginActivity.class);
+            Intent intent = new Intent(this, MainActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
                     PendingIntent.FLAG_ONE_SHOT);
@@ -59,8 +59,8 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
             NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
                     .setSmallIcon(R.mipmap.ic_launcher)
-                    .setContentTitle(title)
-                    .setContentText(content+type)
+                    .setContentTitle("로그인 알림")
+                    .setContentText("다른 기기에서 로그인하였씁니다.")
                     .setAutoCancel(true)
                     .setSound(defaultSoundUri)
                     .setDefaults(NotificationCompat.DEFAULT_VIBRATE)
