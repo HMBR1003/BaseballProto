@@ -70,6 +70,7 @@ public class MainActivity extends AppCompatActivity
     public static final int LOGIN_REQUEST = 100;
     public static final int BUSINESS_SIGNUP_REQUEST = 200;
     static int pushCount = 0;
+    static int loginCount = 0;
     HomeFragment homeFragment;
     DeliveryFragment deliveryFragment;
     TakeoutFragment takeoutFragment;
@@ -149,7 +150,7 @@ public class MainActivity extends AppCompatActivity
     }
     public void setBadge(){
         Intent intent = new Intent("android.intent.action.BADGE_COUNT_UPDATE");
-        intent.putExtra("badge_count", pushCount);
+        intent.putExtra("badge_count", pushCount+loginCount);
         //앱의  패키지 명
         intent.putExtra("badge_count_package_name","org.androidtown.baseballproto");
         // AndroidManifest.xml에 정의된 메인 activity 명
@@ -417,6 +418,7 @@ public class MainActivity extends AppCompatActivity
     public void onResume() { //온리슘 시 파이어베이스 계정 객체에 리스너 부착
         super.onResume();
         pushCount=0;
+        loginCount=0;
         setBadge();
         NotificationManager nm = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
         nm.cancel(100);

@@ -44,7 +44,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         sendNotification(title,content,type);
         Intent intent = new Intent("android.intent.action.BADGE_COUNT_UPDATE");
-        intent.putExtra("badge_count", MainActivity.pushCount);
+        intent.putExtra("badge_count", MainActivity.pushCount+MainActivity.loginCount);
         //앱의  패키지 명
         intent.putExtra("badge_count_package_name","org.androidtown.baseballproto");
         // AndroidManifest.xml에 정의된 메인 activity 명
@@ -68,12 +68,19 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                     .setSmallIcon(R.mipmap.ic_launcher)
                     .setContentTitle("로그인 알림")
                     .setContentText("다른 기기에서 로그인하였습니다.")
-                    .setNumber(++MainActivity.pushCount)
+                    .setNumber(++MainActivity.loginCount)
+//                    .setSubText(MainActivity.pushCount+"")
                     .setAutoCancel(true)
                     .setSound(defaultSoundUri)
                     .setDefaults(NotificationCompat.DEFAULT_VIBRATE)
                     .setContentIntent(pendingIntent)
-                    .setPriority(Notification.PRIORITY_MAX);
+                    .setPriority(Notification.PRIORITY_MAX)
+                    .setGroupSummary(true)
+                    .setGroup("abc");
+            if(android.os.Build.VERSION.SDK_INT>=24){
+                notificationBuilder.setSubText(MainActivity.loginCount+"");
+            }
+
             notificationManager.notify(100 /* ID of notification */, notificationBuilder.build());
         }
         else {
@@ -88,11 +95,17 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                     .setContentTitle(title)
                     .setContentText(content)
                     .setNumber(++MainActivity.pushCount)
+//                    .setSubText(MainActivity.pushCount+"")
                     .setAutoCancel(true)
                     .setSound(defaultSoundUri)
                     .setDefaults(NotificationCompat.DEFAULT_VIBRATE)
                     .setContentIntent(pendingIntent)
-                    .setPriority(Notification.PRIORITY_MAX);
+                    .setPriority(Notification.PRIORITY_MAX)
+                    .setGroupSummary(true)
+                    .setGroup("abc");
+            if(android.os.Build.VERSION.SDK_INT>=24){
+                notificationBuilder.setSubText(MainActivity.pushCount+"");
+            }
 
             notificationManager.notify(200 /* ID of notification */, notificationBuilder.build());
         }
