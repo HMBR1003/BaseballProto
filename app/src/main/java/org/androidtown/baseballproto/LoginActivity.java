@@ -60,10 +60,12 @@ public class LoginActivity extends AppCompatActivity implements
     private CallbackManager mCallbackManager;   //페이스북 로그인 관련
 
     private FirebaseAuth mAuth;         //파이어베이스 계정 관련
+    FirebaseUser user;
 //    private FirebaseDatabase database;  //파이어베이스 DB 관련
     private DatabaseReference myRef;    //파이어베이스 DB 관련
     ActivityLoginBinding activityLoginBinding;  //데이터 바인딩
     String uid;
+    Intent intent;
 
     ProgressDialog dialog;
 
@@ -72,19 +74,21 @@ public class LoginActivity extends AppCompatActivity implements
         FacebookSdk.sdkInitialize(getApplicationContext());     //페이스북 SDK 연동
         activityLoginBinding = DataBindingUtil.setContentView(this,R.layout.activity_login);    //데이터바인딩
 
-        //뒤로가기 버튼 만들기
-        activityLoginBinding.toolBar.setTitle("로그인");         //타이틀입니다.
+        //타이틀 설정
+        activityLoginBinding.toolBar.setTitle("로그인");
         activityLoginBinding.toolBar.setTitleTextColor(Color.WHITE);
         setSupportActionBar(activityLoginBinding.toolBar);
+        //뒤로가기 버튼 만들기
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-
-        mAuth = FirebaseAuth.getInstance();     //파이어베이스 계정 인스턴스 가져오기
+        //파이어베이스 인증 객체 가져오기
+        mAuth = FirebaseAuth.getInstance();
         // DB 관련 변수 초기화
 //        database = FirebaseDatabase.getInstance();
-        myRef = FirebaseDatabase.getInstance().getReference("users");
+        //데이터베이스 참조 객체 가져오기
+        myRef = FirebaseDatabase.getInstance().getReference();
 
-        //구글 로그인 작업
+        //구글 로그인 API 관련 작업
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken("886923317230-ksfdurhset6ak2hm20t8hjcad96oe0k3.apps.googleusercontent.com")
                 .requestEmail()
@@ -93,6 +97,7 @@ public class LoginActivity extends AppCompatActivity implements
                 .enableAutoManage(this /* FragmentActivity */, this /* OnConnectionFailedListener */)
                 .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
                 .build();
+        //구글 로그인 버튼 클릭 시 동작
         findViewById(R.id.button_google_login).setOnClickListener(new View.OnClickListener() {   //구글 로그인 버튼을 클릭 했을 때의 동작 설정
             @Override
             public void onClick(View v) {
@@ -102,13 +107,14 @@ public class LoginActivity extends AppCompatActivity implements
         });
 
 
-        //페이스북 로그인 작업
+        //페이스북 로그인 관련 작업
         mCallbackManager = CallbackManager.Factory.create();
         LoginButton facebookLoginButton = (LoginButton) findViewById(R.id.button_facebook_login);
         facebookLoginButton.setReadPermissions("email", "public_profile");  //사용자에게서 가져올 정보 권한 설정
         facebookLoginButton.registerCallback(mCallbackManager, new FacebookCallback<LoginResult>() {
+            //페이스북 로그인을 성공했을 시
             @Override
-            public void onSuccess(LoginResult loginResult) {    //페이스북 로그인을 성공했을 시
+            public void onSuccess(LoginResult loginResult) {
 //                Toast.makeText(LoginActivity.this, "페이스북 계정 연결 성공", Toast.LENGTH_SHORT).show();
                 dialog=new ProgressDialog(LoginActivity.this);
                 dialog.setProgress(ProgressDialog.STYLE_SPINNER);
@@ -117,7 +123,6 @@ public class LoginActivity extends AppCompatActivity implements
                 dialog.show();
                 handleFacebookAccessToken(loginResult.getAccessToken());
             }
-
             @Override
             public void onCancel() {
                 Toast.makeText(LoginActivity.this, "페이스북 로그인 취소", Toast.LENGTH_SHORT).show();
@@ -129,20 +134,21 @@ public class LoginActivity extends AppCompatActivity implements
             }
         });
     }
-    private void handleFacebookAccessToken(AccessToken token) { //페이스북 계정을 파이어베이스에 등록하는 함수
+
+    //페이스북 계정을 파이어베이스 인증에 등록하는 함수
+    private void handleFacebookAccessToken(AccessToken token) {
         // [START_EXCLUDE silent]
         // [END_EXCLUDE]
-
         AuthCredential credential = FacebookAuthProvider.getCredential(token.getToken());
         mAuth.signInWithCredential(credential).addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
-                        dialog.dismiss();
+
                         if (task.isSuccessful()) {  //등록 성공했을 시
                             // Sign in success, update UI with the signed-in user's information
                             Log.d("파이어베이스 페이스북 계정","등록 성공");
 
-                            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();    //유저 정보를 가져와서
+                            user = mAuth.getCurrentUser();    //유저 정보를 가져와서
 
                             if(user.getEmail()==null) {                                         //이메일을 허용했는 지 검사한 후
                                 Toast.makeText(getApplicationContext(), "이메일을 허용하시고 다시 로그인해주세요.", Toast.LENGTH_SHORT).show();
@@ -159,78 +165,8 @@ public class LoginActivity extends AppCompatActivity implements
                                 LoginManager.getInstance().logOut();                            //페이스북 로그아웃 한다 유저는 로그인을 다시해야한다.
                             }
                             else {
-                                //이메일을 제공했을 시 데이터베이스에 유저 정보 등록
-                                myRef =  FirebaseDatabase.getInstance().getReference();
-                                uid=user.getUid();
-                                myRef.child("users").child(user.getUid()).child("name").setValue(user.getDisplayName());
-                                myRef.child("users").child(user.getUid()).child("email").setValue(user.getEmail());
-
-                                //로그인이 되어있는 지 검사하기 위해 값을 읽는다
-                                myRef.child("users").child(uid).child("isLogin").addListenerForSingleValueEvent(new ValueEventListener() {
-                                    @Override
-                                    public void onDataChange(DataSnapshot dataSnapshot) {
-
-                                        //로그인이 되어있을 경우
-                                        if(dataSnapshot.getValue()!=null&&dataSnapshot.getValue(Long.class) == 1) {
-                                            myRef.child("users").child(uid).child("pushToken").addListenerForSingleValueEvent(new ValueEventListener() {
-                                                @Override
-                                                public void onDataChange(DataSnapshot dataSnapshot) {
-
-                                                    //현재 기기가 로그인 된 것이 아니라면
-                                                    if(dataSnapshot.getValue(String.class)!=FirebaseInstanceId.getInstance().getToken()) {
-                                                        Toast.makeText(LoginActivity.this, "이전 기기의 로그인은 해제됩니다.", Toast.LENGTH_SHORT).show();
-
-                                                        //이전에 로그인한 기기에 푸쉬알림을 보내 강제 로그아웃시킨다
-                                                        RequestQueue queue = Volley.newRequestQueue(getApplicationContext());
-                                                        MainActivity.send("", "", "1", dataSnapshot.getValue(String.class), queue);
-
-                                                        //그 후 데이터베이스에 로그인 상태와 현재 로그인한 기기의 토큰을 등록
-                                                        myRef.child("users").child(uid).child("isLogin").setValue(1);
-                                                        myRef.child("users").child(uid).child("pushToken").setValue(FirebaseInstanceId.getInstance().getToken());
-                                                    }
-                                                }
-                                                @Override
-                                                public void onCancelled(DatabaseError databaseError) {
-
-                                                }
-                                            });
-                                        }
-
-                                        //로그인이 안 되어있거나 처음 계정을 등록하는 경우
-                                        else{
-                                            myRef.child("users").child(uid).child("isLogin").setValue(1);
-                                            myRef.child("users").child(uid).child("pushToken").setValue(FirebaseInstanceId.getInstance().getToken());
-                                        }
-
-                                    }
-                                    @Override
-                                    public void onCancelled(DatabaseError databaseError) {
-
-                                    }
-                                });
-
-                                //데이터베이스에서 사업자확인 항목이 있는지 확인하기 위하여 불러옴
-                                myRef.child("users").child(uid).child("isBusiness(0(not),1(applying),2(finish))").addListenerForSingleValueEvent(new ValueEventListener() {
-                                    @Override
-                                    public void onDataChange(DataSnapshot dataSnapshot) {
-//                                        Toast.makeText(LoginActivity.this, "로그인 사업자 여부 데이터 가져오기 성공", Toast.LENGTH_SHORT).show();
-                                        // 사업자항목이 없으면 새로 생성
-                                        if(dataSnapshot.getValue()==null) {
-                                            myRef.child("users").child(uid).child("isBusiness(0(not),1(applying),2(finish))").setValue(0);
-                                        }
-                                    }
-                                    @Override
-                                    public void onCancelled(DatabaseError databaseError) {
-                                        Toast.makeText(LoginActivity.this, "로그인 사업자 여부 데이터 가져오기 실패", Toast.LENGTH_SHORT).show();
-                                    }
-                                });
-
-                                //홈화면으로 돌아가는 작업을 한다.
-                                Intent intent = new Intent();
-                                setResult(RESULT_OK, intent);           //인텐트로 OK값을 보내고 홈 화면에서는 온액티비티리슐트로 받는다.
-                                finish();                               //창 닫기
+                                firebaseSignin();
                             }
-
                         } else {
                             // 계정 등록 실패 시
                             Log.w("파이어 베이스 페이스북 계정", "등록 실패", task.getException());
@@ -244,14 +180,34 @@ public class LoginActivity extends AppCompatActivity implements
                 });
     }
 
+    //구글 계정을 파이어베이스 인증에 등록하는 함수
+    private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
+        AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
+        mAuth.signInWithCredential(credential)
+                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        if (task.isSuccessful()) {
+                            Log.d("구글 로그인", "파이어베이스 연동 성공");
+                            //파이어베이스로 로그인
+                            firebaseSignin();
+                        } else {
+                            Log.w("구글 로그인", "파이어베이스 연동 실패", task.getException());
+                            Toast.makeText(LoginActivity.this, "로그인 실패",
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+    }
+
     //새로 띄운 액티비티에서 결과를 받아온 경우의 동작을 설정
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (requestCode == GOOGLE_SIGN_IN) {    //구글 인증 액티비티가 응답을 보내왔을 경우
+        //구글 인증 액티비티를 띄우고 응답을 받아온 경우
+        if (requestCode == GOOGLE_SIGN_IN) {
             GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
             if (result.isSuccess()) {
-                // Signed in successfully, show authenticated UI.
                 GoogleSignInAccount acct = result.getSignInAccount();
 //                Toast.makeText(LoginActivity.this, "구글 계정 연결 성공", Toast.LENGTH_SHORT).show();
                 dialog=new ProgressDialog(this);
@@ -270,97 +226,97 @@ public class LoginActivity extends AppCompatActivity implements
             mCallbackManager.onActivityResult(requestCode, resultCode, data);
         }
     }
+    //파이어베이스 로그인 연결 함수
+    public void firebaseSignin(){
+        //이메일을 제공했을 시 데이터베이스에 유저 정보 등록
+        user = mAuth.getCurrentUser();
+        uid= user.getUid();
+        myRef.child("users").child(uid).child("name").setValue(user.getDisplayName());
+        myRef.child("users").child(uid).child("email").setValue(user.getEmail());
+        //데이터베이스에서 사업자확인 항목이 있는지 확인하기 위하여 불러옴
+        myRef.child("users").child(uid).child("isBusiness(0(not),1(applying),2(finish))").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+//              Toast.makeText(LoginActivity.this, "로그인 사업자 여부 데이터 가져오기 성공", Toast.LENGTH_SHORT).show();
+                // 사업자항목이 없으면 새로 생성
+                if(dataSnapshot.getValue()==null) {
+                    myRef.child("users").child(uid).child("isBusiness(0(not),1(applying),2(finish))").setValue(0);
+                }
+            }
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                Toast.makeText(LoginActivity.this, "로그인 사업자 여부 데이터 가져오기 실패", Toast.LENGTH_SHORT).show();
+            }
+        });
 
-    private void firebaseAuthWithGoogle(GoogleSignInAccount acct) { //구글 계정을 파이어베이스에 연동하는 동작을 하는 함수
-        AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
-        mAuth.signInWithCredential(credential)
-                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<AuthResult> task) {
-                        dialog.dismiss();
-                        if (task.isSuccessful()) {
-                            Log.d("구글 로그인", "파이어베이스 연동 성공");
+        //로그인이 되어있는 지 검사하기 위해 값을 읽는다
+        myRef.child("users").child(uid).child("isLogin").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                //로그인이 되어있을 경우
+                if(dataSnapshot.getValue()!=null&&dataSnapshot.getValue(Long.class) == 1) {
+                    //푸쉬토큰 조회
+                    myRef.child("users").child(uid).child("pushToken").addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            //이전 기기가 로그인이 되어 있다면
+                            if(dataSnapshot.getValue()!=null&& !dataSnapshot.getValue(String.class).equals(FirebaseInstanceId.getInstance().getToken())) {
+                                Toast.makeText(LoginActivity.this, "이전 기기의 로그인은 해제됩니다.", Toast.LENGTH_SHORT).show();
 
-                            //데이터베이스에 유저정보 등록
-                            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-                            uid=user.getUid();
-                            myRef =  FirebaseDatabase.getInstance().getReference();
-                            myRef.child("users").child(uid).child("name").setValue(user.getDisplayName());
-                            myRef.child("users").child(uid).child("email").setValue(user.getEmail());
+                                //이전에 로그인한 기기에 푸쉬알림을 보내 강제 로그아웃시킨다
+                                RequestQueue queue = Volley.newRequestQueue(getApplicationContext());
+                                MainActivity.send("", "", "1", dataSnapshot.getValue(String.class), queue);
 
-                            //로그인이 되어있는 지 검사하기 위해 값을 읽는다
-                            myRef.child("users").child(uid).child("isLogin").addListenerForSingleValueEvent(new ValueEventListener() {
-                                @Override
-                                public void onDataChange(DataSnapshot dataSnapshot) {
-
-                                    //로그인이 되어있을 경우
-                                    if(dataSnapshot.getValue()!=null&&dataSnapshot.getValue(Long.class) == 1) {
-                                        myRef.child("users").child(uid).child("pushToken").addListenerForSingleValueEvent(new ValueEventListener() {
-                                            @Override
-                                            public void onDataChange(DataSnapshot dataSnapshot) {
-
-                                                //현재 기기가 로그인 된 것이 아니라면
-                                                if(dataSnapshot.getValue(String.class)!=FirebaseInstanceId.getInstance().getToken()) {
-                                                    Toast.makeText(LoginActivity.this, "이전 기기의 로그인은 해제됩니다.", Toast.LENGTH_SHORT).show();
-
-                                                    //이전에 로그인한 기기에 푸쉬알림을 보내 강제 로그아웃시킨다
-                                                    RequestQueue queue = Volley.newRequestQueue(getApplicationContext());
-                                                    MainActivity.send("", "", "1", dataSnapshot.getValue(String.class), queue);
-
-                                                    //그 후 데이터베이스에 로그인 상태와 현재 로그인한 기기의 토큰을 등록
-                                                    myRef.child("users").child(uid).child("isLogin").setValue(1);
-                                                    myRef.child("users").child(uid).child("pushToken").setValue(FirebaseInstanceId.getInstance().getToken());
-                                                }
-                                            }
-                                            @Override
-                                            public void onCancelled(DatabaseError databaseError) {
-
-                                            }
-                                        });
+                                //그 후 데이터베이스에 로그인 상태와 현재 로그인한 기기의 토큰을 등록
+                                myRef.child("users").child(uid).child("isLogin").setValue(1);
+                                myRef.child("users").child(uid).child("pushToken").setValue(FirebaseInstanceId.getInstance().getToken(), new DatabaseReference.CompletionListener() {
+                                    //토큰 등록이 완료되면 창을 닫는다
+                                    @Override
+                                    public void onComplete(DatabaseError databaseError, DatabaseReference databaseReference) {
+                                        //경고창을 닫고
+                                        dialog.dismiss();
+                                        //홈화면으로 돌아가는 작업을 한다.
+                                        intent = new Intent();
+                                        //인텐트로 OK값을 보내고 홈 화면에서는 온액티비티리슐트로 받는다.
+                                        setResult(RESULT_OK, intent);
+                                        //창 닫기
+                                        finish();
                                     }
-
-                                    //로그인이 안 되어있거나 처음 계정을 등록하는 경우
-                                    else{
-                                        myRef.child("users").child(uid).child("isLogin").setValue(1);
-                                        myRef.child("users").child(uid).child("pushToken").setValue(FirebaseInstanceId.getInstance().getToken());
-                                    }
-
-                                }
-                                @Override
-                                public void onCancelled(DatabaseError databaseError) {
-
-                                }
-                            });
-
-                            //데이터베이스에서 사업자확인 항목이 있는지 확인하기 위하여 불러옴
-                            myRef.child("users").child(uid).child("isBusiness(0(not),1(applying),2(finish))").addListenerForSingleValueEvent(new ValueEventListener() {
-                                @Override
-                                public void onDataChange(DataSnapshot dataSnapshot) {
-//                                    Toast.makeText(LoginActivity.this, "로그인 사업자 여부 데이터 가져오기 성공", Toast.LENGTH_SHORT).show();
-                                    // 사업자항목이 없으면 새로 생성
-                                    if(dataSnapshot.getValue()==null) {
-                                        myRef.child("users").child(uid).child("isBusiness(0(not),1(applying),2(finish))").setValue(0);
-                                    }
-                                }
-                                @Override
-                                public void onCancelled(DatabaseError databaseError) {
-                                    Toast.makeText(LoginActivity.this, "로그인 사업자 여부 데이터 가져오기 실패", Toast.LENGTH_SHORT).show();
-                                }
-                            });
-
-
-
-                            //창 닫기
-                            Intent intent = new Intent();
-                            setResult(RESULT_OK, intent);
-                            finish();
-                        } else {
-                            Log.w("구글 로그인", "파이어베이스 연동 실패", task.getException());
-                            Toast.makeText(LoginActivity.this, "로그인 실패",
-                                    Toast.LENGTH_SHORT).show();
+                                });
+                            }
                         }
-                    }
-                });
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+
+                        }
+                    });
+                }
+
+                //로그인이 안 되어있거나 처음 계정을 등록하는 경우
+                else {
+                    myRef.child("users").child(uid).child("isLogin").setValue(1);
+                    myRef.child("users").child(uid).child("pushToken").setValue(FirebaseInstanceId.getInstance().getToken(), new DatabaseReference.CompletionListener() {
+                        //토큰 등록이 완료되면 창을 닫는다
+                        @Override
+                        public void onComplete(DatabaseError databaseError, DatabaseReference databaseReference) {
+                            //경고창을 닫고
+                            dialog.dismiss();
+                            //홈화면으로 돌아가는 작업을 한다.
+                            intent = new Intent();
+                            //인텐트로 OK값을 보내고 홈 화면에서는 온액티비티리슐트로 받는다.
+                            setResult(RESULT_OK, intent);
+                            //창 닫기
+                            finish();
+                        }
+                    });
+                }
+            }
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+
     }
 
     //구글 로그인 관련 리스너

@@ -400,59 +400,67 @@ public class BusinessSignupActivity extends AppCompatActivity {
         myRef.child(s).child(uid).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                MarketInfo data = dataSnapshot.getValue(MarketInfo.class);
-                dataBinding.manName.setText(data.manName);
-                dataBinding.businessRegisterNum.setText(data.businessRegisterNum);
-                dataBinding.manTel.setText(data.manTel);
-                dataBinding.marketName.setText(data.marketName);
-                switch ((int)data.handleFood){
-                    case 1:
-                        dataBinding.handleFoodRadio.check(R.id.radioChicken);
-                        break;
-                    case 2:
-                        dataBinding.handleFoodRadio.check(R.id.radioPizza);
-                        break;
-                    case 3:
-                        dataBinding.handleFoodRadio.check(R.id.radioBurger);
-                        break;
-                    case 4:
-                        dataBinding.handleFoodRadio.check(R.id.radioPig);
-                        break;
-                    case 5:
-                        dataBinding.handleFoodRadio.check(R.id.radioTake);
-                        break;
-                    case 6:
-                        dataBinding.handleFoodRadio.check(R.id.radioEtc);
-                        break;
-                    default:
-                        dataBinding.handleFoodRadio.clearCheck();
-                        break;
-                }
-                dataBinding.marketAddress1.setText(data.marketAddress1);
-                dataBinding.marketAddress2.setText(data.marketAddress2);
-                dataBinding.marketTel.setText(data.marketTel);
+                if (dataSnapshot.getValue() != null) {
+                    MarketInfo data = dataSnapshot.getValue(MarketInfo.class);
+                    dataBinding.manName.setText(data.manName);
+                    dataBinding.businessRegisterNum.setText(data.businessRegisterNum);
+                    dataBinding.manTel.setText(data.manTel);
+                    dataBinding.marketName.setText(data.marketName);
+                    switch ((int) data.handleFood) {
+                        case 1:
+                            dataBinding.handleFoodRadio.check(R.id.radioChicken);
+                            break;
+                        case 2:
+                            dataBinding.handleFoodRadio.check(R.id.radioPizza);
+                            break;
+                        case 3:
+                            dataBinding.handleFoodRadio.check(R.id.radioBurger);
+                            break;
+                        case 4:
+                            dataBinding.handleFoodRadio.check(R.id.radioPig);
+                            break;
+                        case 5:
+                            dataBinding.handleFoodRadio.check(R.id.radioTake);
+                            break;
+                        case 6:
+                            dataBinding.handleFoodRadio.check(R.id.radioEtc);
+                            break;
+                        default:
+                            dataBinding.handleFoodRadio.clearCheck();
+                            break;
+                    }
+                    dataBinding.marketAddress1.setText(data.marketAddress1);
+                    dataBinding.marketAddress2.setText(data.marketAddress2);
+                    dataBinding.marketTel.setText(data.marketTel);
 
-                //피카소를 이용하여 저장소에 저장된 사진을 url로 이미지뷰에 연결하기
-                Picasso.with(getApplicationContext())
-                        .load(data.marketImageUrl)
-                        .fit()
-                        .centerInside()
-                        .into(dataBinding.marketImageView, new Callback.EmptyCallback() {
-                            @Override public void onSuccess() {
-                                BitmapDrawable d = (BitmapDrawable)dataBinding.marketImageView.getDrawable();
-                                bitmap = d.getBitmap();
-                                dialog.dismiss();
-                            }
-                        });
+                    //피카소를 이용하여 저장소에 저장된 사진을 url로 이미지뷰에 연결하기
+                    Picasso.with(getApplicationContext())
+                            .load(data.marketImageUrl)
+                            .fit()
+                            .centerInside()
+                            .into(dataBinding.marketImageView, new Callback.EmptyCallback() {
+                                @Override
+                                public void onSuccess() {
+                                    BitmapDrawable d = (BitmapDrawable) dataBinding.marketImageView.getDrawable();
+                                    bitmap = d.getBitmap();
+                                    dialog.dismiss();
+                                }
+                            });
 
 
 //                    Toast.makeText(BusinessSignupActivity.this, "데이터 가져오기 성공", Toast.LENGTH_SHORT).show();
+                }
+                else{
+                    dialog.dismiss();
+                    Toast.makeText(BusinessSignupActivity.this, "불러올 데이터가 없습니다.", Toast.LENGTH_SHORT).show();
+                }
             }
             @Override
             public void onCancelled(DatabaseError databaseError) {
 //                    Toast.makeText(BusinessSignupActivity.this, "데이터 가져오기 실패", Toast.LENGTH_SHORT).show();
             }
         });
+
     }
 
     public void uploadImage(){

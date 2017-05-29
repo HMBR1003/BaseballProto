@@ -1,5 +1,6 @@
 package org.androidtown.baseballproto;
 
+import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -22,6 +23,7 @@ import java.util.Map;
 
 public class MyFirebaseMessagingService extends FirebaseMessagingService {
     private static final String TAG = "MyMS";
+    NotificationManager notificationManager;
 
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
@@ -38,18 +40,23 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
         Log.v(TAG, "from : " + from + ", content : " + content);
 
+        notificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         sendNotification(title,content,type);
+        Intent intent = new Intent("android.intent.action.BADGE_COUNT_UPDATE");
+        intent.putExtra("badge_count", MainActivity.pushCount);
+        //앱의  패키지 명
+        intent.putExtra("badge_count_package_name","org.androidtown.baseballproto");
+        // AndroidManifest.xml에 정의된 메인 activity 명
+        intent.putExtra("badge_count_class_name", "org.androidtown.baseballproto.MainActivity");
+        sendBroadcast(intent);
     }
 
     private void sendNotification(String title, String content, String type) {
         if(type.equals("1")){
-            FirebaseAuth mAuth = FirebaseAuth.getInstance();
-            FirebaseUser user = mAuth.getCurrentUser();
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
             if(user!=null){
-                mAuth.signOut();
-                LoginManager.getInstance().logOut();
-                DatabaseReference myRef = FirebaseDatabase.getInstance().getReference();
-                myRef.child("users").child(user.getUid()).child("isLogin").setValue(0);
+                MainActivity.singOut();
             }
             Intent intent = new Intent(this, MainActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -60,16 +67,14 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
                     .setSmallIcon(R.mipmap.ic_launcher)
                     .setContentTitle("로그인 알림")
-                    .setContentText("다른 기기에서 로그인하였씁니다.")
+                    .setContentText("다른 기기에서 로그인하였습니다.")
+                    .setNumber(++MainActivity.pushCount)
                     .setAutoCancel(true)
                     .setSound(defaultSoundUri)
                     .setDefaults(NotificationCompat.DEFAULT_VIBRATE)
-                    .setContentIntent(pendingIntent);
-
-            NotificationManager notificationManager =
-                    (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
-            notificationManager.notify(0 /* ID of notification */, notificationBuilder.build());
+                    .setContentIntent(pendingIntent)
+                    .setPriority(Notification.PRIORITY_MAX);
+            notificationManager.notify(100 /* ID of notification */, notificationBuilder.build());
         }
         else {
             Intent intent = new Intent(this, MainActivity.class);
@@ -82,15 +87,14 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                     .setSmallIcon(R.mipmap.ic_launcher)
                     .setContentTitle(title)
                     .setContentText(content)
+                    .setNumber(++MainActivity.pushCount)
                     .setAutoCancel(true)
                     .setSound(defaultSoundUri)
                     .setDefaults(NotificationCompat.DEFAULT_VIBRATE)
-                    .setContentIntent(pendingIntent);
+                    .setContentIntent(pendingIntent)
+                    .setPriority(Notification.PRIORITY_MAX);
 
-            NotificationManager notificationManager =
-                    (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
-            notificationManager.notify(0 /* ID of notification */, notificationBuilder.build());
+            notificationManager.notify(200 /* ID of notification */, notificationBuilder.build());
         }
     }
 

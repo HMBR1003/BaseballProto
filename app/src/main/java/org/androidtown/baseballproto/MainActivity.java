@@ -1,5 +1,6 @@
 package org.androidtown.baseballproto;
 
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -49,6 +50,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.iid.FirebaseInstanceId;
 
 import org.androidtown.baseballproto.databinding.ActivityMainBinding;
 import org.json.JSONArray;
@@ -67,6 +69,7 @@ public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
     public static final int LOGIN_REQUEST = 100;
     public static final int BUSINESS_SIGNUP_REQUEST = 200;
+    static int pushCount = 0;
     HomeFragment homeFragment;
     DeliveryFragment deliveryFragment;
     TakeoutFragment takeoutFragment;
@@ -88,6 +91,7 @@ public class MainActivity extends AppCompatActivity
     FirebaseAuth mAuth;
     FirebaseAuth.AuthStateListener mAuthListener;
     FirebaseUser user;
+    DatabaseReference myRef;
     String uid;
 
     @Override
@@ -95,7 +99,6 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         FacebookSdk.sdkInitialize(getApplicationContext());
         mainBinding = DataBindingUtil.setContentView(this, R.layout.activity_main);
-
 
         homeFragment = new HomeFragment();
         deliveryFragment = new DeliveryFragment();
@@ -112,12 +115,12 @@ public class MainActivity extends AppCompatActivity
         mainBinding.drawerLayout.setDrawerListener(toggle);
         toggle.syncState();
 
-
+        //왼쪽 슬라이드 메뉴 할당 및 리스너 부착
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
 
-        //왼쪽 슬라이드 메뉴 로그인과 로그아웃버튼 아이디 할당
+        //왼쪽 슬라이드 버튼들 아이디 할당
         Menu menu = navigationView.getMenu();
         navLogin=menu.findItem(R.id.nav_login);
         navNewBusiness=menu.findItem(R.id.nav_newBusiness);
@@ -126,96 +129,130 @@ public class MainActivity extends AppCompatActivity
         navOrderList=menu.findItem(R.id.nav_orderList);
         navChangeCol=menu.findItem(R.id.nav_changeCol);
 
-
         //왼쪽 슬라이드 메뉴 유저이메일과 유저 이름 아이디 할당
         View headerView = navigationView.getHeaderView(0);
         userEmail = (TextView) headerView.findViewById(R.id.userEmail);
         userName = (TextView) headerView.findViewById(R.id.userName);
 
+        //파이어베이스 인증 객체 할당
         mAuth = FirebaseAuth.getInstance();
-        setLeftMenu(mAuth); //좌측 UI 세팅
+        //좌측 UI 세팅
+        setLeftMenu();
+        //인증 객체에 붙일 인증 상태 감시 리스너 정의
         mAuthListener = new FirebaseAuth.AuthStateListener() {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
-                setLeftMenu(firebaseAuth);
+                //인증 상태가 바뀔 때마다 좌측 UI세팅
+                setLeftMenu();
             }
         };
     }
-
-    public void setLeftMenu(FirebaseAuth firebaseAuth){
-        user = firebaseAuth.getCurrentUser();
-        if (user != null) {
-            //데이터베이스 유저 영역 참조변수 선언 및 초기화
-            DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("users");
-
-            //데이터베이스에서 유저가 고객인지 사업자 등록중인지 사업자인지 담는 정보를 불러옴
-            userRef.child(user.getUid()).child("isBusiness(0(not),1(applying),2(finish))").addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    navLogin.setVisible(true);
-                    navLogin.setTitle("로그아웃");
-                    userEmail.setText(user.getEmail());
-
-                    isBusiness = dataSnapshot.getValue(Integer.class);
-
-                    if(isBusiness==0){  //고객
-                        userName.setText(user.getDisplayName()+"고객님");
-
-                        navCart.setVisible(true);
-                        navOrderList.setVisible(true);
-                        navReviewManage.setVisible(true);
-                        navNewBusiness.setVisible(true);
-                        navChangeCol.setVisible(true);
-                    }
-                    else if(isBusiness==1){ //사업자 등록 신청한 사람
-                        userName.setText(user.getDisplayName()+"고객님\n사업자 등록 신청중입니다.");
-                        navNewBusiness.setTitle("사업자 신청정보 수정");
-
-                        navCart.setVisible(true);
-                        navOrderList.setVisible(true);
-                        navReviewManage.setVisible(true);
-                        navNewBusiness.setVisible(true);
-                        navChangeCol.setVisible(true);
-                    }
-                    else if(isBusiness==2){ //사업자
-                        userName.setText(user.getDisplayName()+"점주님\n");
-                        navCart.setVisible(false);
-                        navOrderList.setTitle("주문 받은 내역");
-                        navReviewManage.setTitle("메뉴 관리");
-                        navNewBusiness.setTitle("매장 정보 수정");
-
-                        navOrderList.setVisible(true);
-                        navReviewManage.setVisible(true);
-                        navNewBusiness.setVisible(true);
-                        navChangeCol.setVisible(true);
-                    }
-                    else
-                        Toast.makeText(MainActivity.this, "사업자여부 데이터가 0,1,2중 하나가 아닙니다.", Toast.LENGTH_SHORT).show();
-//                    Toast.makeText(MainActivity.this, "메인 사업자여부 데이터 가져오기 성공", Toast.LENGTH_SHORT).show();
-                }
-                @Override
-                public void onCancelled(DatabaseError databaseError) {
-//                            Toast.makeText(MainActivity.this, "메인 사업자여부 데이터 가져오기 실패", Toast.LENGTH_SHORT).show();
-                }
-            });
-            //내비게이션 메뉴 설정
-        } else {
-            userName.setText("로그인이 필요합니다");
-            userEmail.setText("");
-            navLogin.setTitle("로그인");
-            navOrderList.setTitle("주문 내역");
-            navReviewManage.setTitle("리뷰 관리");
-            navNewBusiness.setTitle("사업자 신규등록 신청");
-
-            navLogin.setVisible(true);
-            navCart.setVisible(true);
-            navOrderList.setVisible(true);
-            navReviewManage.setVisible(true);
-            navChangeCol.setVisible(true);
-            navNewBusiness.setVisible(true);
-        }
+    public void setBadge(){
+        Intent intent = new Intent("android.intent.action.BADGE_COUNT_UPDATE");
+        intent.putExtra("badge_count", pushCount);
+        //앱의  패키지 명
+        intent.putExtra("badge_count_package_name","org.androidtown.baseballproto");
+        // AndroidManifest.xml에 정의된 메인 activity 명
+        intent.putExtra("badge_count_class_name", "org.androidtown.baseballproto.MainActivity");
+        sendBroadcast(intent);
     }
 
+    //좌측 UI 세팅하는 함수
+    public void setLeftMenu(){
+        //현재 로그인한 유저 객체를 가져옴
+        user = mAuth.getCurrentUser();
+            //로그인한 유저가 있으면
+            if (user != null) {
+                //데이터베이스 유저 영역 참조변수 선언 및 초기화
+                DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("users");
+
+                //데이터베이스에서 유저가 고객인지 사업자 등록중인지 사업자인지 담는 정보를 불러옴
+                userRef.child(user.getUid()).child("isBusiness(0(not),1(applying),2(finish))").addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        //데이터 읽기가 완료 된 후의 동작
+                        try {
+                            //공통적인 로그인과 이메일 출력창 세팅
+                            navLogin.setVisible(true);
+                            navLogin.setTitle("로그아웃");
+                            userEmail.setText(user.getEmail());
+
+                            //유저의 사업자여부 데이터를 가져옴
+                            isBusiness = dataSnapshot.getValue(Integer.class);
+
+                            //고객일 경우
+                            if (isBusiness == 0) {
+                                userName.setText(user.getDisplayName() + "고객님");
+                                navOrderList.setTitle("주문 내역");
+                                navReviewManage.setTitle("리뷰 관리");
+                                navNewBusiness.setTitle("사업자 신규등록 신청");
+
+                                //숨겼던 메뉴 보이게 함
+                                navCart.setVisible(true);
+                                navOrderList.setVisible(true);
+                                navReviewManage.setVisible(true);
+                                navNewBusiness.setVisible(true);
+                                navChangeCol.setVisible(true);
+                            }
+                            //사업자 등록 신청한 사람일 경우
+                            else if (isBusiness == 1) {
+                                userName.setText(user.getDisplayName() + "고객님\n사업자 등록 신청중입니다.");
+                                navOrderList.setTitle("주문 내역");
+                                navReviewManage.setTitle("리뷰 관리");
+                                navNewBusiness.setTitle("사업자 신청정보 수정");
+
+                                //숨겼던 메뉴 보이게 함
+                                navCart.setVisible(true);
+                                navOrderList.setVisible(true);
+                                navReviewManage.setVisible(true);
+                                navNewBusiness.setVisible(true);
+                                navChangeCol.setVisible(true);
+                            }
+                            //사업자 등록이 완료된 사람일 경우
+                            else if (isBusiness == 2) {
+                                userName.setText(user.getDisplayName() + "점주님\n");
+                                navCart.setVisible(false);
+                                navOrderList.setTitle("주문 받은 내역");
+                                navReviewManage.setTitle("메뉴 관리");
+                                navNewBusiness.setTitle("매장 정보 수정");
+
+                                //숨겼던 메뉴 보이게 함
+                                navOrderList.setVisible(true);
+                                navReviewManage.setVisible(true);
+                                navNewBusiness.setVisible(true);
+                                navChangeCol.setVisible(true);
+                            } else
+                                Toast.makeText(MainActivity.this, "사업자여부 데이터가 0,1,2중 하나가 아닙니다.", Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(MainActivity.this, "메인 사업자여부 데이터 가져오기 성공", Toast.LENGTH_SHORT).show();
+                       }catch(NullPointerException e){
+                            e.printStackTrace();
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+//                            Toast.makeText(MainActivity.this, "메인 사업자여부 데이터 가져오기 실패", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            //로그인한 유저가 없을 경우 초기화면으로 설정
+            } else {
+                userName.setText("로그인이 필요합니다");
+                userEmail.setText("");
+                navLogin.setTitle("로그인");
+                navOrderList.setTitle("주문 내역");
+                navReviewManage.setTitle("리뷰 관리");
+                navNewBusiness.setTitle("사업자 신규등록 신청");
+
+                navLogin.setVisible(true);
+                navCart.setVisible(true);
+                navOrderList.setVisible(true);
+                navReviewManage.setVisible(true);
+                navChangeCol.setVisible(true);
+                navNewBusiness.setVisible(true);
+            }
+    }
+
+    //뒤로가기 버튼 눌렸을 때 동작설정 왼쪽 메뉴가 열렸을 때 뒤로가기 버튼 누르면 왼쪽 메뉴가 닫히게한다.
     @Override
     public void onBackPressed() {
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -226,63 +263,58 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-//    @Override
-//    public boolean onCreateOptionsMenu(Menu menu) {
-//        // Inflate the menu; this adds items to the action bar if it is present.
-//        getMenuInflater().inflate(R.menu.main, menu);
-//        return true;
-//    }
+    //로그아웃 동작 하는 함수
+    public static void singOut(){
+        FirebaseAuth.getInstance().signOut();
+        LoginManager.getInstance().logOut();
+    }
 
-    //    @Override
-//    public boolean onOptionsItemSelected(MenuItem item) {
-//        // Handle action bar item clicks here. The action bar will
-//        // automatically handle clicks on the Home/Up button, so long
-//        // as you specify a parent activity in AndroidManifest.xml.
-//        int id = item.getItemId();
-//
-//        //noinspection SimplifiableIfStatement
-//        if (id == R.id.action_settings) {
-//            return true;
-//        }
-//
-//        return super.onOptionsItemSelected(item);
-//    }
-    //좌측 네비게이션 바
+    //좌측 네비게이션 바 리스너 동작 설정
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
-        // Handle navigation view item clicks here.
-        int id = item.getItemId();
-        user = FirebaseAuth.getInstance().getCurrentUser();
-        if (id == R.id.nav_login) {
+        int id = item.getItemId();  //눌려진 버튼의 아이디를 저장할 변수
+        //유저 객체를 가져옴
+        user = mAuth.getCurrentUser();
 
+        //로그인 버튼 동작
+        if (id == R.id.nav_login) {
+            //로그인한 유저가 없을 경우엔 로그인창을 띄우는 동작을 함함
             if(user==null) {
                 Intent intent = new Intent(this, LoginActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+               intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivityForResult(intent, LOGIN_REQUEST);
             }
+            //로그인한 유저가 있을 경우엔 로그아웃할 지 물어본 후 로그아웃함
             else {
+                //로그아웃할 지 경고창을 띄워 물어본다
                 AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
                 builder.setTitle("로그아웃 확인");
                 builder.setMessage("로그아웃 하시겠습니까?");
+                //예 버튼 추가하기
                 builder.setPositiveButton("예", new DialogInterface.OnClickListener() {
+                    //예 버튼 눌렀을 경우 로그아웃 시키기
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        mAuth.signOut();
-                        LoginManager.getInstance().logOut();
-                        DatabaseReference myRef = FirebaseDatabase.getInstance().getReference();
-                        myRef.child("users").child(user.getUid()).child("isLogin").setValue(0);
+                        //db의 로그인 상태값을 0으로 만들어준 후
+                        myRef.child("users").child(uid).child("isLogin").setValue(0);
+                        //로그아웃 실행
+                        MainActivity.singOut();
                         Toast.makeText(MainActivity.this, "로그아웃 되었습니다.", Toast.LENGTH_SHORT).show();
                     }
                 });
+                //아니오 버튼 추가
                 builder.setNegativeButton("아니오", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
 
                     }
                 });
+                //정의한 경고창을 만든다
                 AlertDialog dialog = builder.create();
+                //다른화면을 눌러도 경고창이 꺼지지 않도록 설정
                 dialog.setCancelable(false);
+                //경고창을 띄운다
                 dialog.show();
             }
         } else if (id == R.id.nav_cart) {  //왼쪽 슬라이드메뉴 장바구니 부분
@@ -312,8 +344,10 @@ public class MainActivity extends AppCompatActivity
             if(user==null) {
                 pleaseLogin();
             }
+            //사업자 등록신청하는 화면을 새로 띄운다
             else {
                 Intent intent = new Intent(this, BusinessSignupActivity.class);
+                //uid와 사업자여부를 인텐트에 넣어서 전달해준다.
                 intent.putExtra("uid",uid);
                 intent.putExtra("isBusiness",isBusiness);
                 intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -380,13 +414,46 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void onResume() { //온스타트 시 파이어베이스 계정 객체에 리스너 부착
+    public void onResume() { //온리슘 시 파이어베이스 계정 객체에 리스너 부착
         super.onResume();
-        user = FirebaseAuth.getInstance().getCurrentUser();
+        pushCount=0;
+        setBadge();
+        NotificationManager nm = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+        nm.cancel(100);
+        nm.cancel(200);
+        //유저 객체를 가져옴
+        user = mAuth.getCurrentUser();
+
+        //유저가 로그인한 상태인 지 검사
         if (user != null) {
             uid=user.getUid();
+            myRef = FirebaseDatabase.getInstance().getReference();
+
+            //푸쉬토큰을 검사하여 다른 기기에서 로그인을 했는 지 확인한다
+            myRef.child("users").child(uid).child("pushToken").addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    //현재 기기가 로그인 된 것이 아니라면
+                    if(dataSnapshot.getValue()!=null&& !dataSnapshot.getValue(String.class).equals(FirebaseInstanceId.getInstance().getToken())) {
+                        //로그아웃 후에
+                        MainActivity.singOut();
+                        //인증 상태 리스너를 추가
+                        mAuth.addAuthStateListener(mAuthListener);
+                        Toast.makeText(MainActivity.this, "다른 기기에서 로그인하여 로그아웃 되었습니다.", Toast.LENGTH_SHORT).show();
+                    }
+                    else{
+                        mAuth.addAuthStateListener(mAuthListener);
+                    }
+                }
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+                }
+            });
         }
-        mAuth.addAuthStateListener(mAuthListener);
+        else{
+            mAuth.addAuthStateListener(mAuthListener);
+        }
+        setLeftMenu();
     }
 
     @Override
@@ -419,12 +486,8 @@ public class MainActivity extends AppCompatActivity
         if (from == null) {
             return;
         }
-
         String title = intent.getStringExtra("title");
         String contents = intent.getStringExtra("contents");
-
-
-
     }
 
 
