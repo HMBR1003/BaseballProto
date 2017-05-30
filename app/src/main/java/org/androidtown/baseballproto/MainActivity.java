@@ -348,9 +348,11 @@ public class MainActivity extends AppCompatActivity
             //사업자 등록신청하는 화면을 새로 띄운다
             else {
                 Intent intent = new Intent(this, BusinessSignupActivity.class);
-                //uid와 사업자여부를 인텐트에 넣어서 전달해준다.
+                //uid와 사업자여부와 사용자 정보를 인텐트에 넣어서 전달해준다.
                 intent.putExtra("uid",uid);
                 intent.putExtra("isBusiness",isBusiness);
+                intent.putExtra("name",user.getDisplayName());
+                intent.putExtra("email",user.getEmail());
                 intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivityForResult(intent, BUSINESS_SIGNUP_REQUEST);
             }
@@ -421,8 +423,7 @@ public class MainActivity extends AppCompatActivity
         loginCount=0;
         setBadge();
         NotificationManager nm = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
-        nm.cancel(100);
-        nm.cancel(200);
+        nm.cancelAll();
         //유저 객체를 가져옴
         user = mAuth.getCurrentUser();
 
@@ -472,6 +473,23 @@ public class MainActivity extends AppCompatActivity
         //로그인 액티비티에서 로그인 성공 응답을 보내왔을 경우
         if(requestCode==LOGIN_REQUEST && resultCode==RESULT_OK){
 
+        }
+        //사업자 신청 액티비티에서 성공 응답을 보내왔을 경우
+        else if(requestCode==BUSINESS_SIGNUP_REQUEST && resultCode==RESULT_OK){
+            //제출 확인 안내 메세지 띄우기
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("안내");
+            builder.setMessage("신청 내용이 제출되었습니다.\n운영진이 확인 후 승인해드리겠습니다.\n신청내용은 언제든지 다시 수정하실 수 있습니다.");
+            //확인 버튼설정 및 버튼을 눌렀을 때 동작 설정
+            builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+
+                }
+            });
+            AlertDialog dialog = builder.create();
+            dialog.setCancelable(false);
+            dialog.show();
         }
     }
 

@@ -265,7 +265,7 @@ public class LoginActivity extends AppCompatActivity implements
 
                                 //이전에 로그인한 기기에 푸쉬알림을 보내 강제 로그아웃시킨다
                                 RequestQueue queue = Volley.newRequestQueue(getApplicationContext());
-                                MainActivity.send("", "", "1", dataSnapshot.getValue(String.class), queue);
+                                MainActivity.send("", user.getEmail(), "1", dataSnapshot.getValue(String.class), queue);
                             }
                                 //그 후 데이터베이스에 로그인 상태와 현재 로그인한 기기의 토큰을 등록
                                 myRef.child("users").child(uid).child("isLogin").setValue(1);
@@ -273,21 +273,27 @@ public class LoginActivity extends AppCompatActivity implements
                                     //토큰 등록이 완료되면 창을 닫는다
                                     @Override
                                     public void onComplete(DatabaseError databaseError, DatabaseReference databaseReference) {
-                                        //경고창을 닫고
-                                        dialog.dismiss();
-                                        //홈화면으로 돌아가는 작업을 한다.
-                                        intent = new Intent();
-                                        //인텐트로 OK값을 보내고 홈 화면에서는 온액티비티리슐트로 받는다.
-                                        setResult(RESULT_OK, intent);
-                                        //창 닫기
-                                        finish();
+                                        if(databaseError==null) {
+                                            //경고창을 닫고
+                                            dialog.dismiss();
+                                            //홈화면으로 돌아가는 작업을 한다.
+                                            intent = new Intent();
+                                            //인텐트로 OK값을 보내고 홈 화면에서는 온액티비티리슐트로 받는다.
+                                            setResult(RESULT_OK, intent);
+                                            //창 닫기
+                                            finish();
+                                        }
+                                        else{
+                                            dialog.dismiss();
+                                            Toast.makeText(LoginActivity.this, "푸쉬토큰 데이터베이스 입력 오류 : "+databaseError.getMessage(), Toast.LENGTH_SHORT).show();
+                                        }
                                     }
                                 });
 
                         }
                         @Override
                         public void onCancelled(DatabaseError databaseError) {
-                            Toast.makeText(LoginActivity.this, "데이터 조회 캔슬됨 에러 메세지 : "+databaseError.getMessage(), Toast.LENGTH_SHORT).show();
+                            Toast.makeText(LoginActivity.this, "푸쉬토큰 데이터 조회 캔슬됨 에러 메세지 : "+databaseError.getMessage(), Toast.LENGTH_SHORT).show();
                             dialog.dismiss();
                         }
                     });
@@ -314,7 +320,8 @@ public class LoginActivity extends AppCompatActivity implements
             }
             @Override
             public void onCancelled(DatabaseError databaseError) {
-
+                Toast.makeText(LoginActivity.this, "로그인 여부 데이터 조회 캔슬됨 에러 메세지 : "+databaseError.getMessage(), Toast.LENGTH_SHORT).show();
+                dialog.dismiss();
             }
         });
 

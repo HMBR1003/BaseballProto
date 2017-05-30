@@ -1,6 +1,7 @@
 package org.androidtown.baseballproto;
 
 import android.*;
+import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -19,6 +20,7 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
@@ -50,6 +52,8 @@ public class BusinessSignupActivity extends AppCompatActivity {
     private static final int SEARCH_ADDRESS_ACTIVITY = 10000;
     private static final int GET_MARKET_IMAGE = 7000 ;
 
+    String email;
+    String name;
     String uid;
     int isBusiness;     //사업자 구분하기 위해 선언
     ActivityBusinessSignupBinding dataBinding;  //데이터 바인딩
@@ -86,6 +90,8 @@ public class BusinessSignupActivity extends AppCompatActivity {
         Intent intent = getIntent();
         uid = intent.getStringExtra("uid");
         isBusiness = intent.getIntExtra("isBusiness", -1);
+        email = intent.getStringExtra("email");
+        name = intent.getStringExtra("name");
 
         dataBinding.loadImage.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -204,6 +210,9 @@ public class BusinessSignupActivity extends AppCompatActivity {
                 if(isBusiness==0||isBusiness==1) {
                     //데이터베이스 초기화
                     myRef = FirebaseDatabase.getInstance().getReference();
+                    myRef.child("tmp").child(uid).child("accountEmail").setValue(email);
+                    myRef.child("tmp").child(uid).child("accountName").setValue(name);
+
                     myRef.child("tmp").child(uid).child("manName").setValue(dataBinding.manName.getText().toString());
                     myRef.child("tmp").child(uid).child("manTel").setValue(dataBinding.manTel.getText().toString());
                     myRef.child("tmp").child(uid).child("businessRegisterNum").setValue(dataBinding.businessRegisterNum.getText().toString());
@@ -296,6 +305,7 @@ public class BusinessSignupActivity extends AppCompatActivity {
                         i.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
                         i.addFlags(Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
                         startActivityForResult(i, 2);
+                        finish();
                     }
                 });
                 //닫기
@@ -391,6 +401,17 @@ public class BusinessSignupActivity extends AppCompatActivity {
         dialog.setProgress(ProgressDialog.STYLE_SPINNER);
         dialog.setMessage("데이터를 불러오는 중입니다...");
         dialog.setCancelable(false);
+        dialog.setOnKeyListener(new Dialog.OnKeyListener() {
+            @Override
+            public boolean onKey(DialogInterface arg0, int keyCode,
+                                 KeyEvent event) {
+                if (keyCode == KeyEvent.KEYCODE_BACK) {
+                    dialog.dismiss();
+                    finish();
+                }
+                return true;
+            }
+        });
         dialog.show();
 
         //데이터베이스 초기화
@@ -457,7 +478,8 @@ public class BusinessSignupActivity extends AppCompatActivity {
             }
             @Override
             public void onCancelled(DatabaseError databaseError) {
-//                    Toast.makeText(BusinessSignupActivity.this, "데이터 가져오기 실패", Toast.LENGTH_SHORT).show();
+                dialog.dismiss();
+                Toast.makeText(BusinessSignupActivity.this, "데이터 가져오기 실패 에러 내용 : "+databaseError.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -500,6 +522,7 @@ public class BusinessSignupActivity extends AppCompatActivity {
                 myRef.child("tmp").child(uid).child("marketImageUrl").setValue(photoUri);
                 dialog.dismiss();
                 Toast.makeText(BusinessSignupActivity.this, "제출 완료.", Toast.LENGTH_SHORT).show();
+                setResult(RESULT_OK);
                 finish();
             }
         });
