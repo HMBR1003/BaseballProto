@@ -129,7 +129,7 @@ public class BusinessSignupActivity extends AppCompatActivity {
             dataBinding.inputBusinessInfo.setText("등록된 사업자 정보를 수정합니다.");
             dataBinding.businessSubmit.setText("수정 완료");
 
-//            loadData("market");
+            loadData("market");
         }
 
         //인텐트 값이 제대로 넘어오지 않았을 경우
@@ -248,8 +248,44 @@ public class BusinessSignupActivity extends AppCompatActivity {
                 }
 
                 //사장 고객이 매장 정보를 수정하는 경우
-               else  if(isBusiness==3){
+                else  if(isBusiness==3){
+                    //데이터베이스 초기화
+                    myRef = FirebaseDatabase.getInstance().getReference();
+                    myRef.child("market").child(uid).child("accountEmail").setValue(email);
+                    myRef.child("market").child(uid).child("accountName").setValue(name);
 
+                    myRef.child("market").child(uid).child("manName").setValue(dataBinding.manName.getText().toString());
+                    myRef.child("market").child(uid).child("manTel").setValue(dataBinding.manTel.getText().toString());
+                    myRef.child("market").child(uid).child("businessRegisterNum").setValue(dataBinding.businessRegisterNum.getText().toString());
+                    myRef.child("market").child(uid).child("marketName").setValue(dataBinding.marketName.getText().toString());
+                    switch (dataBinding.handleFoodRadio.getCheckedRadioButtonId()) {
+                        case R.id.radioChicken:
+                            myRef.child("market").child(uid).child("handleFood").setValue(1);
+                            break;
+                        case R.id.radioPizza:
+                            myRef.child("market").child(uid).child("handleFood").setValue(2);
+                            break;
+                        case R.id.radioBurger:
+                            myRef.child("market").child(uid).child("handleFood").setValue(3);
+                            break;
+                        case R.id.radioPig:
+                            myRef.child("market").child(uid).child("handleFood").setValue(4);
+                            break;
+                        case R.id.radioTake:
+                            myRef.child("market").child(uid).child("handleFood").setValue(5);
+                            break;
+                        case R.id.radioEtc:
+                            myRef.child("market").child(uid).child("handleFood").setValue(6);
+                            break;
+                        default:
+                            myRef.child("market").child(uid).child("handleFood").setValue(0);
+                            break;
+                    }
+                    myRef.child("market").child(uid).child("marketAddress1").setValue(dataBinding.marketAddress1.getText().toString());
+                    myRef.child("market").child(uid).child("marketAddress2").setValue(dataBinding.marketAddress2.getText().toString());
+                    myRef.child("market").child(uid).child("marketTel").setValue(dataBinding.marketTel.getText().toString());
+                    myRef.child("users").child(uid).child("isBusiness(0(not),1(applying),2(finish))").setValue(2);
+                    uploadImage();
                 }
                 else{
                     Toast.makeText(BusinessSignupActivity.this, "데이터 저장 시 사업자 여부 데이터 오류", Toast.LENGTH_SHORT).show();
@@ -369,7 +405,7 @@ public class BusinessSignupActivity extends AppCompatActivity {
         }
     }
 
-    //주소찾기 실행 후 결과를 받아왔을 때의 동작 설정
+    //주소찾기나 사진 불러오기 결과를 받아왔을 때의 동작 설정
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
