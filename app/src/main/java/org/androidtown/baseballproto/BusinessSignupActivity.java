@@ -204,9 +204,8 @@ public class BusinessSignupActivity extends AppCompatActivity {
         //확인 버튼설정 및 버튼을 눌렀을 때 동작 설정
         builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
             @Override
-            public void onClick(DialogInterface dialog, int which) {
-
-                //고객이 사업자 등록 신청을 하는경우와 신청 중인 고객이 수정을 하는 경우, 임시 데이터베이스로 입력된 정보를 넣는다.
+            public void onClick(final DialogInterface dialog, int which) {
+                myRef = FirebaseDatabase.getInstance().getReference();
                 if(isBusiness==0||isBusiness==1) {
                     //데이터베이스 초기화
                     myRef = FirebaseDatabase.getInstance().getReference();
@@ -248,7 +247,7 @@ public class BusinessSignupActivity extends AppCompatActivity {
                 }
 
                 //사장 고객이 매장 정보를 수정하는 경우
-                else  if(isBusiness==3){
+                else  if(isBusiness==2){
                     //데이터베이스 초기화
                     myRef = FirebaseDatabase.getInstance().getReference();
                     myRef.child("market").child(uid).child("accountEmail").setValue(email);
@@ -290,6 +289,8 @@ public class BusinessSignupActivity extends AppCompatActivity {
                 else{
                     Toast.makeText(BusinessSignupActivity.this, "데이터 저장 시 사업자 여부 데이터 오류", Toast.LENGTH_SHORT).show();
                 }
+                //고객이 사업자 등록 신청을 하는경우와 신청 중인 고객이 수정을 하는 경우, 임시 데이터베이스로 입력된 정보를 넣는다.
+
             }
         });
         //닫기
@@ -304,7 +305,7 @@ public class BusinessSignupActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    //뒤로가기 버튼 기능 설정
+    //상단 뒤로가기 버튼 기능 설정
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
@@ -557,8 +558,8 @@ public class BusinessSignupActivity extends AppCompatActivity {
                 String photoUri =  String.valueOf(downloadUrl);
                 myRef.child("tmp").child(uid).child("marketImageUrl").setValue(photoUri);
                 dialog.dismiss();
-                Toast.makeText(BusinessSignupActivity.this, "제출 완료.", Toast.LENGTH_SHORT).show();
-                setResult(RESULT_OK);
+                if(isBusiness!=2)
+                    setResult(RESULT_OK);
                 finish();
             }
         });

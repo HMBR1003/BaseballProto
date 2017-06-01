@@ -57,6 +57,7 @@
             </intent-filter>
         </service>
 
+        <activity android:name=".MenuManageActivity"></activity>
     </application>
 
 </manifest>

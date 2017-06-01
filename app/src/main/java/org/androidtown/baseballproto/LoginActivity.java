@@ -152,6 +152,7 @@ public class LoginActivity extends AppCompatActivity implements
 
                             if(user.getEmail()==null) {                                         //이메일을 허용했는 지 검사한 후
                                 Toast.makeText(getApplicationContext(), "이메일을 허용하시고 다시 로그인해주세요.", Toast.LENGTH_SHORT).show();
+                                dialog.dismiss();
                                 user.delete()                                                   //안했으면 등록했던 계정을 삭제한다.
                                         .addOnCompleteListener(new OnCompleteListener<Void>() {
                                             @Override
@@ -163,6 +164,7 @@ public class LoginActivity extends AppCompatActivity implements
                                         });
                                 mAuth.signOut();                                                //그 후 파이어베이스 로그아웃
                                 LoginManager.getInstance().logOut();                            //페이스북 로그아웃 한다 유저는 로그인을 다시해야한다.
+                                dialog.dismiss();
                             }
                             else {
                                 firebaseSignin();

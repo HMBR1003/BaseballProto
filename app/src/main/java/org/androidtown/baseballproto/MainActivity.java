@@ -337,7 +337,11 @@ public class MainActivity extends AppCompatActivity
                 pleaseLogin();
             }
             else {
-
+                if(isBusiness==2){
+                    Intent intent = new Intent(this, MenuManageActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    startActivityForResult(intent, BUSINESS_SIGNUP_REQUEST);
+                }
             }
         } else if (id == R.id.nav_changeCol) {  //왼쪽 슬라이드메뉴 경기장 변경 부분
 
@@ -442,21 +446,24 @@ public class MainActivity extends AppCompatActivity
                         MainActivity.singOut();
                         //인증 상태 리스너를 추가
                         mAuth.addAuthStateListener(mAuthListener);
+                        setLeftMenu();
                         Toast.makeText(MainActivity.this, "다른 기기에서 로그인하여 로그아웃 되었습니다.", Toast.LENGTH_SHORT).show();
                     }
                     else{
                         mAuth.addAuthStateListener(mAuthListener);
+                        setLeftMenu();
                     }
                 }
                 @Override
                 public void onCancelled(DatabaseError databaseError) {
+                    setLeftMenu();
                 }
             });
         }
         else{
             mAuth.addAuthStateListener(mAuthListener);
+            setLeftMenu();
         }
-        setLeftMenu();
     }
 
     @Override
@@ -595,7 +602,7 @@ public class MainActivity extends AppCompatActivity
                         getResources().getDrawable(R.drawable.ic_fourth),
                         Color.parseColor(colors[3]))
 //                        .selectedIcon(getResources().getDrawable(R.drawable.ic_eighth))
-                        .title("야구 정보")
+                        .title("야구장 날씨")
                         .build()
         );
 

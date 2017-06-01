@@ -46,6 +46,8 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         notificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         sendNotification(title,content,type);
+
+        //앱에 알림 뱃지 달기 작업
         Intent intent = new Intent("android.intent.action.BADGE_COUNT_UPDATE");
         intent.putExtra("badge_count", MainActivity.pushCount+MainActivity.loginCount);
         //앱의  패키지 명
