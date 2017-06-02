@@ -1,4 +1,4 @@
-package org.androidtown.baseballproto;
+package org.androidtown.baseballproto.Test;
 
 /**
  * Created by Administrator on 2017-05-17.

@@ -1,4 +1,4 @@
-package org.androidtown.baseballproto;
+package org.androidtown.baseballproto.Test;
 
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -14,6 +14,8 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+
+import org.androidtown.baseballproto.R;
 
 import java.util.ArrayList;
 

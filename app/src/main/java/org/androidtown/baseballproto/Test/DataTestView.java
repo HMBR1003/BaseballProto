@@ -1,4 +1,4 @@
-package org.androidtown.baseballproto;
+package org.androidtown.baseballproto.Test;
 
 import android.content.Context;
 import android.util.AttributeSet;
@@ -6,6 +6,8 @@ import android.view.LayoutInflater;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+
+import org.androidtown.baseballproto.R;
 
 /**
  * Created by Administrator on 2017-05-17.

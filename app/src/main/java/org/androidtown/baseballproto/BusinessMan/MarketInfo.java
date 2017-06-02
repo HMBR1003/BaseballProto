@@ -1,4 +1,4 @@
-package org.androidtown.baseballproto;
+package org.androidtown.baseballproto.BusinessMan;
 
 import com.google.firebase.database.IgnoreExtraProperties;
 

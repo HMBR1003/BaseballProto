@@ -1,4 +1,4 @@
-package org.androidtown.baseballproto;
+package org.androidtown.baseballproto.Test;
 
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -7,13 +7,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
-import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import java.util.ArrayList;
+import org.androidtown.baseballproto.R;
 
-import butterknife.BindView;
+import java.util.ArrayList;
 
 /**
  * Created by Administrator on 2017-05-16.

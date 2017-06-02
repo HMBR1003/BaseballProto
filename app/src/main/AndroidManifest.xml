@@ -4,6 +4,7 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
@@ -30,14 +31,14 @@
         <activity
             android:name=".LoginActivity"
             android:theme="@style/AppTheme.NoActionBar" />
-        <activity android:name=".DataTestActivity" />
-        <activity android:name=".DBTestActivity" />
+        <activity android:name=".Test.DataTestActivity" />
+        <activity android:name=".Test.DBTestActivity" />
         <activity
-            android:name=".BusinessSignupActivity"
+            android:name=".BusinessMan.BusinessSignupActivity"
             android:theme="@style/AppTheme.NoActionBar" />
-        <activity android:name=".StorageActivity" />
+        <activity android:name=".Test.StorageActivity" />
         <activity
-            android:name=".AddressWebViewActivity"
+            android:name=".BusinessMan.AddressWebViewActivity"
             android:label="주소 찾기" />
 
         <service
@@ -57,7 +58,14 @@
             </intent-filter>
         </service>
 
-        <activity android:name=".MenuManageActivity"></activity>
+        <activity android:name=".BusinessMan.MenuManageActivity"
+                   android:theme="@style/AppTheme.NoActionBar"/>
+
+        <activity android:name=".BusinessMan.MenuAddActivity"
+                   android:theme="@style/AppTheme.NoActionBar"></activity>
+
+        <activity android:name="com.theartofdev.edmodo.cropper.CropImageActivity"
+            android:theme="@style/AppTheme.NoActionBar"/>
     </application>
 
 </manifest>

@@ -6,7 +6,19 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context="org.androidtown.baseballproto.MenuManageActivity">
+    tools:context="org.androidtown.baseballproto.BusinessMan.MenuManageActivity">
+
+    <android.support.v7.widget.Toolbar
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/toolBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        app:theme="@style/ToolbarStyle">
+
+    </android.support.v7.widget.Toolbar>
 
     <TextView
         android:layout_width="match_parent"
@@ -60,14 +72,31 @@
             android:background="@drawable/black_teduri"/>
     </LinearLayout>
 
-    <ListView
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:background="@drawable/black_teduri">
+    <ListView
+        android:id="@+id/menuListView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:visibility="gone">
     </ListView>
+        <TextView
+            android:id="@+id/menuListText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="아직 메뉴가 없습니다.\n하단의 버튼을 눌러 추가해주세요"
+            android:textSize="13sp"/>
+    </FrameLayout>
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp"
         android:orientation="vertical">
         <LinearLayout
             android:layout_width="match_parent"
@@ -82,6 +111,7 @@
                     android:layout_weight="1"
                     android:gravity="center">
                     <Button
+                        android:id="@+id/addMenuButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="메뉴 추가하기"/>
@@ -92,6 +122,7 @@
                     android:layout_weight="1"
                     android:gravity="center">
                     <Button
+                        android:id="@+id/selectMainMenuButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="대표메뉴 선택(필수)"/>
@@ -118,6 +149,7 @@
                     android:layout_weight="1"
                     android:gravity="center">
                     <Button
+                        android:id="@+id/editMenuButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="수정하기"/>
@@ -128,6 +160,7 @@
                     android:layout_weight="1"
                     android:gravity="center">
                     <Button
+                        android:id="@+id/deleteMenuButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="삭제하기"/>

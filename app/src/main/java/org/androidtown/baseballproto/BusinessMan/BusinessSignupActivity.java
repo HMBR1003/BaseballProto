@@ -1,25 +1,27 @@
-package org.androidtown.baseballproto;
+package org.androidtown.baseballproto.BusinessMan;
 
-import android.*;
 import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.content.ComponentName;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.databinding.DataBindingUtil;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.FileProvider;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.View;
@@ -27,30 +29,33 @@ import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.IgnoreExtraProperties;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.UploadTask;
 
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 
+import org.androidtown.baseballproto.BuildConfig;
+import org.androidtown.baseballproto.R;
 import org.androidtown.baseballproto.databinding.ActivityBusinessSignupBinding;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
-import java.util.Hashtable;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
 
 public class BusinessSignupActivity extends AppCompatActivity {
     private static final int SEARCH_ADDRESS_ACTIVITY = 10000;
     private static final int GET_MARKET_IMAGE = 7000 ;
+    private static final int REQUEST_CROP = 6000;
 
     String email;
     String name;
@@ -59,8 +64,12 @@ public class BusinessSignupActivity extends AppCompatActivity {
     ActivityBusinessSignupBinding dataBinding;  //데이터 바인딩
     DatabaseReference myRef;
 
+    String tmpPath;
+    Uri tmpImageUri;
+
     Bitmap bitmap=null;
     ProgressDialog dialog;
+    String isMarket;
 
 
     @Override
@@ -207,6 +216,7 @@ public class BusinessSignupActivity extends AppCompatActivity {
             public void onClick(final DialogInterface dialog, int which) {
                 myRef = FirebaseDatabase.getInstance().getReference();
                 if(isBusiness==0||isBusiness==1) {
+                    isMarket="tmp";
                     //데이터베이스 초기화
                     myRef = FirebaseDatabase.getInstance().getReference();
                     myRef.child("tmp").child(uid).child("accountEmail").setValue(email);
@@ -243,12 +253,13 @@ public class BusinessSignupActivity extends AppCompatActivity {
                     myRef.child("tmp").child(uid).child("marketAddress2").setValue(dataBinding.marketAddress2.getText().toString());
                     myRef.child("tmp").child(uid).child("marketTel").setValue(dataBinding.marketTel.getText().toString());
                     myRef.child("users").child(uid).child("isBusiness(0(not),1(applying),2(finish))").setValue(1);
-                    uploadImage();
+                    uploadImage(isMarket);
                 }
 
                 //사장 고객이 매장 정보를 수정하는 경우
                 else  if(isBusiness==2){
                     //데이터베이스 초기화
+                    isMarket="market";
                     myRef = FirebaseDatabase.getInstance().getReference();
                     myRef.child("market").child(uid).child("accountEmail").setValue(email);
                     myRef.child("market").child(uid).child("accountName").setValue(name);
@@ -283,8 +294,7 @@ public class BusinessSignupActivity extends AppCompatActivity {
                     myRef.child("market").child(uid).child("marketAddress1").setValue(dataBinding.marketAddress1.getText().toString());
                     myRef.child("market").child(uid).child("marketAddress2").setValue(dataBinding.marketAddress2.getText().toString());
                     myRef.child("market").child(uid).child("marketTel").setValue(dataBinding.marketTel.getText().toString());
-                    myRef.child("users").child(uid).child("isBusiness(0(not),1(applying),2(finish))").setValue(2);
-                    uploadImage();
+                    uploadImage(isMarket);
                 }
                 else{
                     Toast.makeText(BusinessSignupActivity.this, "데이터 저장 시 사업자 여부 데이터 오류", Toast.LENGTH_SHORT).show();
@@ -320,11 +330,12 @@ public class BusinessSignupActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        int permissionCheck = ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE);
-        if(permissionCheck== PackageManager.PERMISSION_DENIED) {
+        int permissionCheck1 = ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE);
+        int permissionCheck2 = ContextCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        if(permissionCheck1== PackageManager.PERMISSION_DENIED||permissionCheck2==PackageManager.PERMISSION_DENIED) {
 
             //사용자가 권한을 한번 이라도 거부 했던 경우
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.READ_EXTERNAL_STORAGE)) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.READ_EXTERNAL_STORAGE)||ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
                 //알림창을 띄운다
                 AlertDialog.Builder builder = new AlertDialog.Builder(BusinessSignupActivity.this);
                 builder.setTitle("알림");
@@ -358,6 +369,7 @@ public class BusinessSignupActivity extends AppCompatActivity {
             //처음 권한을 묻는 경우
             } else {
                 ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
+                ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
             }
         }
     }
@@ -405,6 +417,23 @@ public class BusinessSignupActivity extends AppCompatActivity {
                 return;
         }
     }
+    private void galleryAddPic() {
+        Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+        File f = new File(tmpPath);
+        Uri contentUri = Uri.fromFile(f);
+        mediaScanIntent.setData(contentUri);
+        this.sendBroadcast(mediaScanIntent);
+    }
+    private File createImageFile() throws IOException {
+        // Create an image file name
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String imageFileName = timeStamp + ".jpg";
+        File storageDir = new File(Environment.getExternalStorageDirectory().getAbsolutePath()+ "/pathvalue/"+imageFileName);
+
+        // Save a file: path for use with ACTION_VIEW intents
+        tmpPath = storageDir.getAbsolutePath();
+        return storageDir;
+    }
 
     //주소찾기나 사진 불러오기 결과를 받아왔을 때의 동작 설정
     @Override
@@ -417,18 +446,71 @@ public class BusinessSignupActivity extends AppCompatActivity {
         }
         //매장 대표사진 설정에서 결과를 받아왔을 경우
         else if(requestCode==GET_MARKET_IMAGE&&resultCode==RESULT_OK) {
+
+            Uri image = data.getData(); //인텐트에서 이미지에 대한 데이터 추출
+            cropImage(image);
+        }
+        else if(requestCode==REQUEST_CROP&&resultCode==RESULT_OK){
             Uri image = data.getData(); //인텐트에서 이미지에 대한 데이터 추출
             try {
                 //이미지를 비트맵 변수로 저장
                 bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), image);
                 //이미지뷰에 비트맵 변수를 세팅
+                dataBinding.imageViewContainer.setVisibility(View.VISIBLE);
+                dataBinding.textViewContainer.setVisibility(View.INVISIBLE);
                 dataBinding.marketImageView.setImageBitmap(bitmap);
-
+                File f = new File(tmpImageUri.getPath());
+                if(f.exists())
+                    Toast.makeText(this, "존재한다", Toast.LENGTH_SHORT).show();
+                else
+                    Toast.makeText(this, "널이다~", Toast.LENGTH_SHORT).show();
                 //예외 처리 문장
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
+        else if(requestCode==REQUEST_CROP&&resultCode==RESULT_CANCELED){
+            Intent i = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+            startActivityForResult(i, GET_MARKET_IMAGE);
+        }
+    }
+    public void cropImage(Uri photoUri) {
+        File albumFile = null;
+        try {
+            albumFile = createImageFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if(albumFile != null){
+            tmpImageUri = Uri.fromFile(albumFile);
+        }
+        Intent intent = new Intent("com.android.camera.action.CROP");
+        intent.setDataAndType(photoUri, "image/*");
+//        List<ResolveInfo> list = getPackageManager().queryIntentActivities(intent, 0);
+//        int size = list.size();
+//        if (size == 0) {
+//            Toast.makeText(this, "취소 되었습니다.", Toast.LENGTH_SHORT).show();
+//            return;
+//        } else {
+//            Toast.makeText(this, "용량이 큰 사진의 경우 시간이 오래 걸릴 수 있습니다.", Toast.LENGTH_SHORT).show();
+//            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+//            intent.putExtra("crop", "true");
+            intent.putExtra("aspectX", 1);
+            intent.putExtra("aspectY", 1);
+            intent.putExtra("scale", true);
+            intent.putExtra("output", tmpImageUri);
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+//            intent.putExtra("return-data", false);
+//            intent.putExtra(MediaStore.EXTRA_OUTPUT, tmpImageUri);
+//            intent.putExtra("outputFormat", Bitmap.CompressFormat.JPEG.toString()); //Bitmap 형태로 받기 위해 해당 작업 진행
+            Intent i = new Intent(intent);
+//            ResolveInfo res = list.get(0);
+//            i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+//            i.setComponent(new ComponentName(res.activityInfo.packageName, res.activityInfo.name));
+            startActivityForResult(i,REQUEST_CROP);
+//        }
+
     }
 
 
@@ -459,6 +541,8 @@ public class BusinessSignupActivity extends AppCompatActivity {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 if (dataSnapshot.getValue() != null) {
+                    dataBinding.imageViewContainer.setVisibility(View.VISIBLE);
+                    dataBinding.textViewContainer.setVisibility(View.INVISIBLE);
                     MarketInfo data = dataSnapshot.getValue(MarketInfo.class);
                     dataBinding.manName.setText(data.manName);
                     dataBinding.businessRegisterNum.setText(data.businessRegisterNum);
@@ -522,7 +606,8 @@ public class BusinessSignupActivity extends AppCompatActivity {
 
     }
 
-    public void uploadImage(){
+
+    public void uploadImage(String s){
         //데이터 저장하는 중이라고 알림창 띄우기
         dialog.setProgress(ProgressDialog.STYLE_SPINNER);
         dialog.setMessage("데이터를 저장하는 중입니다...");
@@ -532,7 +617,7 @@ public class BusinessSignupActivity extends AppCompatActivity {
         //저장소에 대한 참조 만들기
         StorageReference  mStorageRef = FirebaseStorage.getInstance().getReference();
         //실제로 이미지가 저장될 곳의 참조
-        StorageReference mountainsRef = mStorageRef.child("tmp").child(uid).child("market.jpg");
+        StorageReference mountainsRef = mStorageRef.child(s).child(uid).child("market.jpg");
 
         //비트맵을 jpg로 변환시켜서 변수에 저장
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -556,7 +641,7 @@ public class BusinessSignupActivity extends AppCompatActivity {
                 // taskSnapshot.getMetadata() contains file metadata such as size, content-type, and download URL.
                 Uri downloadUrl = taskSnapshot.getDownloadUrl();
                 String photoUri =  String.valueOf(downloadUrl);
-                myRef.child("tmp").child(uid).child("marketImageUrl").setValue(photoUri);
+                myRef.child(isMarket).child(uid).child("marketImageUrl").setValue(photoUri);
                 dialog.dismiss();
                 if(isBusiness!=2)
                     setResult(RESULT_OK);

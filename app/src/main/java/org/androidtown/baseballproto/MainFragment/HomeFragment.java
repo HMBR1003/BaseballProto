@@ -1,4 +1,4 @@
-package org.androidtown.baseballproto;
+package org.androidtown.baseballproto.MainFragment;
 
 
 import android.content.Intent;
@@ -10,6 +10,10 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import org.androidtown.baseballproto.Test.DBTestActivity;
+import org.androidtown.baseballproto.Test.DataTestActivity;
+import org.androidtown.baseballproto.MainActivity;
+import org.androidtown.baseballproto.R;
 import org.androidtown.baseballproto.databinding.FragmentHomeBinding;
 
 /**
