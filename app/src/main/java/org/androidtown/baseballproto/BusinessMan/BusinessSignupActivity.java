@@ -7,6 +7,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.database.Cursor;
 import android.databinding.DataBindingUtil;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -22,6 +23,7 @@ import android.support.v4.content.FileProvider;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.View;
@@ -330,12 +332,12 @@ public class BusinessSignupActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        int permissionCheck1 = ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE);
-        int permissionCheck2 = ContextCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE);
-        if(permissionCheck1== PackageManager.PERMISSION_DENIED||permissionCheck2==PackageManager.PERMISSION_DENIED) {
+//        int permissionCheck1 = ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE);
+        int permissionCheck = ContextCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        if(permissionCheck== PackageManager.PERMISSION_DENIED) {
 
             //사용자가 권한을 한번 이라도 거부 했던 경우
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.READ_EXTERNAL_STORAGE)||ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
                 //알림창을 띄운다
                 AlertDialog.Builder builder = new AlertDialog.Builder(BusinessSignupActivity.this);
                 builder.setTitle("알림");
@@ -368,7 +370,7 @@ public class BusinessSignupActivity extends AppCompatActivity {
                 dialog.show();
             //처음 권한을 묻는 경우
             } else {
-                ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
+//                ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
                 ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
             }
         }
@@ -417,24 +419,13 @@ public class BusinessSignupActivity extends AppCompatActivity {
                 return;
         }
     }
-    private void galleryAddPic() {
-        Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-        File f = new File(tmpPath);
-        Uri contentUri = Uri.fromFile(f);
-        mediaScanIntent.setData(contentUri);
-        this.sendBroadcast(mediaScanIntent);
-    }
-    private File createImageFile() throws IOException {
-        // Create an image file name
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        String imageFileName = timeStamp + ".jpg";
-        File storageDir = new File(Environment.getExternalStorageDirectory().getAbsolutePath()+ "/pathvalue/"+imageFileName);
 
-        // Save a file: path for use with ACTION_VIEW intents
-        tmpPath = storageDir.getAbsolutePath();
-        return storageDir;
+    public String getPathFromUri(Uri uri){
+        Cursor cursor = getContentResolver().query(uri, null, null, null, null );
+        cursor.moveToNext();
+        String path = cursor.getString( cursor.getColumnIndex( "_data" ) );
+        return path;
     }
-
     //주소찾기나 사진 불러오기 결과를 받아왔을 때의 동작 설정
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -459,9 +450,16 @@ public class BusinessSignupActivity extends AppCompatActivity {
                 dataBinding.imageViewContainer.setVisibility(View.VISIBLE);
                 dataBinding.textViewContainer.setVisibility(View.INVISIBLE);
                 dataBinding.marketImageView.setImageBitmap(bitmap);
-                File f = new File(tmpImageUri.getPath());
-                if(f.exists())
+                File f = new File(getPathFromUri(image));
+                Log.d("URI",image.toString());
+                Log.d("path",getPathFromUri(image));
+                Toast.makeText(this, image.toString(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getPathFromUri(image), Toast.LENGTH_SHORT).show();
+                if(f.exists()) {
                     Toast.makeText(this, "존재한다", Toast.LENGTH_SHORT).show();
+                    if(f.delete())
+                        Toast.makeText(this, "삭제 성공", Toast.LENGTH_SHORT).show();
+                }
                 else
                     Toast.makeText(this, "널이다~", Toast.LENGTH_SHORT).show();
                 //예외 처리 문장
@@ -475,15 +473,6 @@ public class BusinessSignupActivity extends AppCompatActivity {
         }
     }
     public void cropImage(Uri photoUri) {
-        File albumFile = null;
-        try {
-            albumFile = createImageFile();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        if(albumFile != null){
-            tmpImageUri = Uri.fromFile(albumFile);
-        }
         Intent intent = new Intent("com.android.camera.action.CROP");
         intent.setDataAndType(photoUri, "image/*");
 //        List<ResolveInfo> list = getPackageManager().queryIntentActivities(intent, 0);
@@ -498,7 +487,7 @@ public class BusinessSignupActivity extends AppCompatActivity {
             intent.putExtra("aspectX", 1);
             intent.putExtra("aspectY", 1);
             intent.putExtra("scale", true);
-            intent.putExtra("output", tmpImageUri);
+//            intent.putExtra("output", tmpImageUri);
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
 //            intent.putExtra("return-data", false);
