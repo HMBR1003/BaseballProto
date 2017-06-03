@@ -58,12 +58,14 @@
             </intent-filter>
         </service>
 
-        <activity android:name=".BusinessMan.MenuManageActivity"
-                   android:theme="@style/AppTheme.NoActionBar"/>
-
-        <activity android:name=".BusinessMan.MenuAddActivity"
-                   android:theme="@style/AppTheme.NoActionBar"></activity>
-
+        <activity
+            android:name=".BusinessMan.MenuManageActivity"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".BusinessMan.MenuAddActivity"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity android:name=".ColSelectActivity"
+            android:theme="@style/AppTheme.NoActionBar"></activity>
     </application>
 
 </manifest>

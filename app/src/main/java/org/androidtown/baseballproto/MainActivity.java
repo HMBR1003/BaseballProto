@@ -1,8 +1,10 @@
 package org.androidtown.baseballproto;
 
+import android.app.Activity;
 import android.app.NotificationManager;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.databinding.DataBindingUtil;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -12,6 +14,7 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AlertDialog;
+import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -61,6 +64,7 @@ public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
     public static final int LOGIN_REQUEST = 100;
     public static final int BUSINESS_SIGNUP_REQUEST = 200;
+    public static final int SELECT_COL = 300;
     static int pushCount = 0;
     static int loginCount = 0;
     HomeFragment homeFragment;
@@ -99,6 +103,23 @@ public class MainActivity extends AppCompatActivity
         baseInfoFragment = new BaseInfoFragment();
 
         initUI();  //하단 UI 세팅
+
+        //최초실행 체크하기
+        SharedPreferences pref = getSharedPreferences("isFirst", Activity.MODE_PRIVATE);
+        boolean first = pref.getBoolean("isFirst", false);
+        if(first==false){
+            Log.d("최초실행여부", "최초실행입니다");
+            SharedPreferences.Editor editor = pref.edit();
+            editor.putBoolean("isFirst",true);
+            editor.commit();
+            Intent intent = new Intent(this,ColSelectActivity.class);
+            startActivityForResult(intent,SELECT_COL);
+        //앱 최초 실행시 하고 싶은 작업
+        }else{
+            Log.d("최초실행여부", "최초실행이 아닙니다");
+
+        }
+
 
         //상단 UI 세팅
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -336,7 +357,8 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         } else if (id == R.id.nav_changeCol) {  //왼쪽 슬라이드메뉴 경기장 변경 부분
-
+            Intent intent = new Intent(this,ColSelectActivity.class);
+            startActivityForResult(intent,SELECT_COL);
         } else if (id == R.id.nav_newBusiness) {  //왼쪽 슬라이드메뉴 사업자 신규 등록 부분
             if(user==null) {
                 pleaseLogin();
@@ -489,6 +511,10 @@ public class MainActivity extends AppCompatActivity
             AlertDialog dialog = builder.create();
             dialog.setCancelable(false);
             dialog.show();
+        }
+        //경기장 선택 하고 응답 받아왔을 때
+        else if(requestCode==SELECT_COL && resultCode==RESULT_OK){
+
         }
     }
 

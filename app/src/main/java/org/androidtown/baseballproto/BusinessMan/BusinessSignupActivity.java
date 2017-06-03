@@ -510,15 +510,7 @@ public class BusinessSignupActivity extends AppCompatActivity {
 //        Intent intent = new Intent("com.android.camera.action.CROP");
 //        intent.setDataAndType(imageCropUri, "image/*");
 
-//        List<ResolveInfo> list = getPackageManager().queryIntentActivities(intent, 0);
-//        int size = list.size();
-//        if (size == 0) {
-//            Toast.makeText(this, "취소 되었습니다.", Toast.LENGTH_SHORT).show();
-//            return;
-//        } else {
-//            Toast.makeText(this, "용량이 큰 사진의 경우 시간이 오래 걸릴 수 있습니다.", Toast.LENGTH_SHORT).show();
-//            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-//            intent.putExtra("crop", "true");
+
 
 //            intent.putExtra("aspectX", 1);
 //            intent.putExtra("aspectY", 1);
