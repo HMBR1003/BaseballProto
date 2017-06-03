@@ -10,6 +10,7 @@ import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.databinding.DataBindingUtil;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
@@ -66,8 +67,8 @@ public class BusinessSignupActivity extends AppCompatActivity {
     ActivityBusinessSignupBinding dataBinding;  //데이터 바인딩
     DatabaseReference myRef;
 
-    String tmpPath;
-    Uri tmpImageUri;
+    private Uri tempImageUri;
+    private Uri imageCropUri;
 
     Bitmap bitmap=null;
     ProgressDialog dialog;
@@ -107,8 +108,11 @@ public class BusinessSignupActivity extends AppCompatActivity {
         dataBinding.loadImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-                startActivityForResult(i, GET_MARKET_IMAGE);
+                Intent intent = new Intent(Intent.ACTION_PICK);
+                intent.setType(android.provider.MediaStore.Images.Media.CONTENT_TYPE);
+                startActivityForResult(intent, GET_MARKET_IMAGE);
+//                Intent i = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+//                startActivityForResult(i, GET_MARKET_IMAGE);
             }
         });
 
@@ -420,12 +424,6 @@ public class BusinessSignupActivity extends AppCompatActivity {
         }
     }
 
-    public String getPathFromUri(Uri uri){
-        Cursor cursor = getContentResolver().query(uri, null, null, null, null );
-        cursor.moveToNext();
-        String path = cursor.getString( cursor.getColumnIndex( "_data" ) );
-        return path;
-    }
     //주소찾기나 사진 불러오기 결과를 받아왔을 때의 동작 설정
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -438,43 +436,80 @@ public class BusinessSignupActivity extends AppCompatActivity {
         //매장 대표사진 설정에서 결과를 받아왔을 경우
         else if(requestCode==GET_MARKET_IMAGE&&resultCode==RESULT_OK) {
 
-            Uri image = data.getData(); //인텐트에서 이미지에 대한 데이터 추출
-            cropImage(image);
+            imageCropUri = data.getData(); //인텐트에서 이미지에 대한 데이터 추출
+            cropImage();
         }
         else if(requestCode==REQUEST_CROP&&resultCode==RESULT_OK){
-            Uri image = data.getData(); //인텐트에서 이미지에 대한 데이터 추출
-            try {
-                //이미지를 비트맵 변수로 저장
-                bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), image);
-                //이미지뷰에 비트맵 변수를 세팅
+            File tempFile = getTempFile();
+            if (tempFile.exists()) {
+                bitmap = BitmapFactory.decodeFile(tempFile.toString());
                 dataBinding.imageViewContainer.setVisibility(View.VISIBLE);
                 dataBinding.textViewContainer.setVisibility(View.INVISIBLE);
                 dataBinding.marketImageView.setImageBitmap(bitmap);
-                File f = new File(getPathFromUri(image));
-                Log.d("URI",image.toString());
-                Log.d("path",getPathFromUri(image));
-                Toast.makeText(this, image.toString(), Toast.LENGTH_SHORT).show();
-                Toast.makeText(this, getPathFromUri(image), Toast.LENGTH_SHORT).show();
-                if(f.exists()) {
-                    Toast.makeText(this, "존재한다", Toast.LENGTH_SHORT).show();
-                    if(f.delete())
-                        Toast.makeText(this, "삭제 성공", Toast.LENGTH_SHORT).show();
-                }
-                else
-                    Toast.makeText(this, "널이다~", Toast.LENGTH_SHORT).show();
-                //예외 처리 문장
-            } catch (IOException e) {
-                e.printStackTrace();
+
+                tempFile.delete();
             }
+
+//            final Bundle extras = data.getExtras();
+//            if(extras != null) {
+//                bitmap = extras.getParcelable("data");
+//                dataBinding.imageViewContainer.setVisibility(View.VISIBLE);
+//                dataBinding.textViewContainer.setVisibility(View.INVISIBLE);
+//                dataBinding.marketImageView.setImageBitmap(bitmap);
+//            }
+
+//            Uri imageCrop = data.getData(); //인텐트에서 이미지에 대한 데이터 추출
+//            try {
+//                //이미지를 비트맵 변수로 저장
+//                bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageCrop);
+//                //이미지뷰에 비트맵 변수를 세팅
+//                dataBinding.imageViewContainer.setVisibility(View.VISIBLE);
+//                dataBinding.textViewContainer.setVisibility(View.INVISIBLE);
+//                dataBinding.marketImageView.setImageBitmap(bitmap);
+//
+//                //예외 처리 문장
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
         }
-        else if(requestCode==REQUEST_CROP&&resultCode==RESULT_CANCELED){
-            Intent i = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-            startActivityForResult(i, GET_MARKET_IMAGE);
+        else if(requestCode==REQUEST_CROP&&resultCode!=RESULT_OK){
+            Intent intent = new Intent(Intent.ACTION_PICK);
+            intent.setType(android.provider.MediaStore.Images.Media.CONTENT_TYPE);
+            startActivityForResult(intent, GET_MARKET_IMAGE);
+//            Intent i = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+//            startActivityForResult(i, GET_MARKET_IMAGE);
         }
     }
-    public void cropImage(Uri photoUri) {
+
+    private File getTempFile(){
+        File file = new File( Environment.getExternalStorageDirectory(), "tmpImage.jpg" );
+        try{
+            file.createNewFile();
+        }
+        catch( Exception e ){
+            Log.e("파일 생성", "실패" );
+        }
+        return file;
+    }
+
+    public void cropImage() {
+
+        tempImageUri = Uri.fromFile( getTempFile() );
+
         Intent intent = new Intent("com.android.camera.action.CROP");
-        intent.setDataAndType(photoUri, "image/*");
+        intent.setDataAndType(imageCropUri, "image/*");
+        intent.putExtra( "crop", "true" );
+        intent.putExtra("aspectX", 1);
+        intent.putExtra("aspectY", 1);
+        intent.putExtra("scale", true);
+        intent.putExtra("return-data", true);
+        intent.putExtra( MediaStore.EXTRA_OUTPUT, tempImageUri );
+        intent.putExtra("outputFormat", Bitmap.CompressFormat.JPEG.toString()); //Bitmap 형태로 받기 위해 해당 작업 진행
+        startActivityForResult(intent, REQUEST_CROP);
+
+//        Intent intent = new Intent("com.android.camera.action.CROP");
+//        intent.setDataAndType(imageCropUri, "image/*");
+
 //        List<ResolveInfo> list = getPackageManager().queryIntentActivities(intent, 0);
 //        int size = list.size();
 //        if (size == 0) {
@@ -484,20 +519,22 @@ public class BusinessSignupActivity extends AppCompatActivity {
 //            Toast.makeText(this, "용량이 큰 사진의 경우 시간이 오래 걸릴 수 있습니다.", Toast.LENGTH_SHORT).show();
 //            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 //            intent.putExtra("crop", "true");
-            intent.putExtra("aspectX", 1);
-            intent.putExtra("aspectY", 1);
-            intent.putExtra("scale", true);
+
+//            intent.putExtra("aspectX", 1);
+//            intent.putExtra("aspectY", 1);
+//            intent.putExtra("scale", true);
+//            intent.putExtra("return-data", true);
+//            startActivityForResult(intent,REQUEST_CROP);
+
 //            intent.putExtra("output", tmpImageUri);
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+//            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+//            intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
 //            intent.putExtra("return-data", false);
 //            intent.putExtra(MediaStore.EXTRA_OUTPUT, tmpImageUri);
-//            intent.putExtra("outputFormat", Bitmap.CompressFormat.JPEG.toString()); //Bitmap 형태로 받기 위해 해당 작업 진행
-            Intent i = new Intent(intent);
+
 //            ResolveInfo res = list.get(0);
 //            i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 //            i.setComponent(new ComponentName(res.activityInfo.packageName, res.activityInfo.name));
-            startActivityForResult(i,REQUEST_CROP);
 //        }
 
     }
